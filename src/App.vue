@@ -21,7 +21,8 @@
           model: 'a',
           disabled: false,
           type: 'input',
-          label: 'Field-1'
+          label: 'Field-1',
+          placeholder: 'Input Field One'
           // formatValueToField: (value) => {
           //   if (value) {
           //     return (value + '').replace(' VAL', '')
@@ -46,7 +47,8 @@
           }, {
             id: 'id2',
             model: 'c',
-            type: 'checkbox',
+            items: [{ value: '1', label: 'item1' }, '2', '3'],
+            type: 'check-list',
             inputType: 'password',
             dependsOn: ['id1'],
             unknown: 'id',
