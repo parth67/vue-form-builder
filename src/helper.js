@@ -1,8 +1,8 @@
-import { get as objGet, isFunction, filter } from 'lodash'
+import { get as objGet, isFunction, filter, isObject } from 'lodash'
 import { createNamespacedHelpers } from 'vuex'
-// import Vue from 'vue'
+import Vue from 'vue'
 
-/* export function setVmForVal (store, namespace, model, formatValueToField, formatValueToModel) {
+export function setVmForVal (store, namespace, model, formatValueToField, formatValueToModel) {
   let vm = new Vue({
     store,
     computed: {
@@ -30,31 +30,31 @@ import { createNamespacedHelpers } from 'vuex'
 
   })
   return vm
-} */
-
-function defaultGetter (store, namespace, model, formatValueToField) {
-  return function getter () {
-    let mapState = createNamespacedHelpers(namespace).mapState({
-      value: (state) => {
-        let value = objGet(state, model, null)
-        return isFunction(formatValueToField) ? formatValueToField(value) : value
-      }
-    })
-    return mapState.value.call({$store: store})
-  }
 }
 
-function defaultSetter (store, namespace, model, formatValueToModel) {
-  return function commiter (value) {
-    let mapActions = createNamespacedHelpers(namespace).mapActions({
-      set: 'set'
-    })
-    mapActions.set.call({$store: store}, {
-      key: model,
-      value: isFunction(formatValueToModel) ? formatValueToModel(value) : value
-    })
-  }
-}
+// function defaultGetter (store, namespace, model, formatValueToField) {
+//   return function getter () {
+//     let mapState = createNamespacedHelpers(namespace).mapState({
+//       value: (state) => {
+//         let value = objGet(state, model, null)
+//         return isFunction(formatValueToField) ? formatValueToField(value) : value
+//       }
+//     })
+//     return mapState.value.call({$store: store})
+//   }
+// }
+//
+// function defaultSetter (store, namespace, model, formatValueToModel) {
+//   return function commiter (value) {
+//     let mapActions = createNamespacedHelpers(namespace).mapActions({
+//       set: 'set'
+//     })
+//     mapActions.set.call({$store: store}, {
+//       key: model,
+//       value: isFunction(formatValueToModel) ? formatValueToModel(value) : value
+//     })
+//   }
+// }
 
 /* export function getModuleByNamespace (store, namespace) {
   let retVal = {
@@ -82,26 +82,26 @@ function defaultSetter (store, namespace, model, formatValueToModel) {
   return retVal
 } */
 
-export function defineValueProperty (obj, store, namespace, model, formatValueToField, formatValueToModel) {
-  let getter = defaultGetter(store, namespace, model, formatValueToField)
-  let setter = defaultSetter(store, namespace, model, formatValueToModel)
-  Object.defineProperty(obj, 'value', {
-    enumerable: true,
-    configurable: true,
-    get: function valueGetter () {
-      return getter()
-    },
-    set: function (newVal) {
-      let value = getter()
-      /* eslint-disable no-self-compare */
-      if (newVal === value || (newVal !== newVal && value !== value)) {
-        return
-      }
-      /* eslint-enable no-self-compare */
-      setter(newVal)
-    }
-  })
-}
+// export function defineValueProperty (obj, store, namespace, model, formatValueToField, formatValueToModel) {
+//   let getter = defaultGetter(store, namespace, model, formatValueToField)
+//   let setter = defaultSetter(store, namespace, model, formatValueToModel)
+//   Object.defineProperty(obj, 'value', {
+//     enumerable: true,
+//     configurable: true,
+//     get: function valueGetter () {
+//       return getter()
+//     },
+//     set: function (newVal) {
+//       let value = getter()
+//       /* eslint-disable no-self-compare */
+//       if (newVal === value || (newVal !== newVal && value !== value)) {
+//         return
+//       }
+//       /* eslint-enable no-self-compare */
+//       setter(newVal)
+//     }
+//   })
+// }
 
 export function createNamespacedStore (storeDef) {
   return {...storeDef, namespaced: true}
@@ -143,3 +143,53 @@ export function namespaceToArray (namespace) {
   })
 }
 
+/* ********* namespace helper ********* */
+export function getNamespacedState (namespace, store) {
+  let helper = createNamespacedHelpers(namespace)
+  let mapState = helper.mapState({
+    dummy: (state) => state
+  })
+  console.log(helper, mapState, 'mapstate')
+  return mapState.dummy.call({$store: store})
+}
+
+export function unifyObjectStyle (type, payload, options) {
+  if (isObject(type) && type.type) {
+    options = payload
+    payload = type
+    type = type.type
+  }
+
+  return {type, payload, options}
+}
+
+export function getNamespacedDispatch (namespace, store) {
+  return (_type, _payload, _options) => {
+    const {type, payload, options} = unifyObjectStyle(_type, _payload, _options)
+    let mapActions = createNamespacedHelpers(namespace).mapActions({
+      dummy: type
+    })
+    return mapActions.dummy.call({$store: store}, payload, options)
+  }
+}
+
+export function getNamespacedCommit (namespace, store) {
+  return (_type, _payload, _options) => {
+    const {type, payload, options} = unifyObjectStyle(_type, _payload, _options)
+    let mapMutations = createNamespacedHelpers(namespace).mapMutations({
+      dummy: type
+    })
+    return mapMutations.dummy.call({$store: store}, payload, options)
+  }
+}
+
+export function getNamespacedGetter (namespace, store) {
+  return (type) => {
+    let mapGetters = createNamespacedHelpers(namespace).mapGetters({
+      dummy: type
+    })
+    return mapGetters.dummy.call({$store: store})
+  }
+}
+
+/* *************** */

@@ -1,19 +1,22 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }} {{getHi()}} {{ $store.state.model.a}} </h1>
+    <h1>{{ msg }} {{getHi()}} {{ $store.state.model}} </h1>
   </div>
 </template>
 
 <script>
+  import storeMixIn from './mixin/store-namespace'
+
   export default {
     name: 'HelloWorld',
+    mixins: [storeMixIn],
     data () {
       return {
         msg: 'App'
       }
     },
-    created: function () {
-      console.log(this.$store)
+    beforeMount: function () {
+      console.log(this.$storeCtx, 'beforeMount')
     },
     methods: {
       getHi: function () {

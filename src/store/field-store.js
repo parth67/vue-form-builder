@@ -1,49 +1,52 @@
 import { keys, each, isObject, has, isFunction, isArray, flattenDepth } from 'lodash'
+import Vue from 'vue'
 // import { defineValueProperty } from './helper'
 
-const state = {
-  // Initial state of field-store
-  // non-editable
-  id: null,
-  model: null,
-  type: null,
-  dependsOn: [],
-  label: '',
-  helpText: '',
-  hint: '',
+const state = function () {
+  return {
+    // Initial state of field-store
+    // non-editable
+    id: null,
+    model: null,
+    type: null,
+    dependsOn: [],
+    label: '',
+    helpText: '',
+    hint: '',
 
-  // editable see mutation
-  visible: true,
-  disabled: false,
-  styleClass: '',
-  errors: [],
+    // editable see mutation
+    visible: true,
+    disabled: false,
+    styleClass: '',
+    errors: [],
 
-  // methods for processing
-  validator: null, // validator is merge chain
-  // formatValueToField: identity,
-  // formatValueToModel: identity,
-  onChange: null, // identity
-  onValidate: null, // identity
-  // on change call this notification chain.
-  // on field def see: watcher option function.
-  // this points to store itself first arg is schema store context
-  notifier: null,
-  _private: {
-    // private data to be stored
-    value: null,
-    // schemaNamespace: '',
-    savedValue: null,
-    // this is not used for now. but we might require to enable disable validation
-    validationRequired: true
+    // methods for processing
+    validator: null, // validator is merge chain
+    // formatValueToField: identity,
+    // formatValueToModel: identity,
+    onChange: null, // identity
+    onValidate: null, // identity
+    // on change call this notification chain.
+    // on field def see: watcher option function.
+    // this points to store itself first arg is schema store context
+    notifier: null,
+    _private: {
+      // private data to be stored
+      value: null,
+      // schemaNamespace: '',
+      savedValue: null,
+      // this is not used for now. but we might require to enable disable validation
+      validationRequired: true
+    }
+    // default: 'val', // if attribute is added.
+    // value: null,
   }
-  // default: 'val', // if attribute is added.
-  // value: null,
 }
 
 const getters = {
   // Getters to access field-store values
   value (state) {
-    return state._private.value
+    return state._private._vm.value
   },
   privateData (state) {
     return state._private
@@ -62,13 +65,16 @@ const getters = {
   },
   helpText (state) {
     return state.helpText
+  },
+  errors (state) {
+    return state.errors
   }
 }
 
 const actions = {
   // Asynchronous mutations commits to modify field-store
   init ({state, commit}, payload) {
-    let { value: fieldDef } = payload
+    let {value: fieldDef} = payload
 
     // validator must be array of function.
     if (isFunction(fieldDef.validator)) {
@@ -178,7 +184,8 @@ const mutations = {
           state[key] = obj[key]
         } else {
           // define new property
-          console.warn(`unknown key in field-store ${key}`)
+          // console.warn(`unknown key in field-store ${key}`)
+          Vue.set(state, key, obj[key])
         }
       })
     }
@@ -207,18 +214,21 @@ const mutations = {
     const {value = ''} = payload
     state.errors = value
   },
+  clearErrors (state) {
+    state.errors.splice(0)
+  },
   // private
   setValue (state, payload) {
     const {value = ''} = payload
-    state._private.value = value
+    state._private._vm.value = value
   },
   // set saved val
   preserveValue (state) {
-    state._private.savedValue = state._private.value
-    state._private.value = null
+    state._private.savedValue = state._private._vm.value
+    state._private._vm.value = null
   },
   restoreValue (state) {
-    state._private.value = state._private.savedValue
+    state._private._vm.value = state._private.savedValue
     state._private.savedValue = null
   }
 }

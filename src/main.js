@@ -3,8 +3,9 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import store from './store'
-import Vuex, {createNamespacedHelpers} from 'vuex'
+import model from './store/model'
+import schema from './store/schema-store'
+import Vuex, { createNamespacedHelpers } from 'vuex'
 
 Vue.config.productionTip = false
 Vue.use(Vuex)
@@ -12,9 +13,14 @@ Vue.use(Vuex)
 window.Vue = Vue
 window.createNamespacedHelpers = createNamespacedHelpers
 
-window.$store = new Vuex.Store(store)
+window.$store = new Vuex.Store({
+  modules: {
+    model: {namespaced: true, ...model},
+    formSchema: schema
+  }
+})
 
-window.$store.dispatch('init', {
+/* window.$store.dispatch('init', {
   schemaNamespace: '',
   modelNamespace: 'model',
   value: {
@@ -37,7 +43,7 @@ window.$store.dispatch('init', {
       }]
     }]
   }
-})
+}) */
 
 window.Vue = Vue
 

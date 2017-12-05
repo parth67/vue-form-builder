@@ -1,71 +1,43 @@
 <template>
 
   <div class="vue-form-generator" v-if="schema != null">
-    <fieldset v-if="schema.fields" :is="tag">
-      <template v-for="field in fields">
-        <div class="form-group" v-if="fieldVisible(field)" :class="getFieldRowClasses(field)">
-          <label v-if="fieldTypeHasLabel(field)" :for="getFieldID(field)">{{ field.label }}
-            <span class="help" v-if="field.help">
-              <i class="icon"></i>
-              <div class="helpText" v-html="field.help"></div>
-            </span>
-          </label>
-          <div class="field-wrap">
-            <component :is="getFieldType(field)" :disabled="fieldDisabled(field)" :model="model" :schema="field"
-                       :formOptions="options" @model-updated="modelUpdated" @validated="onFieldValidated"></component>
-            <div class="buttons" v-if="buttonVisibility(field)">
-              <button v-for="btn in field.buttons" @click="buttonClickHandler(btn, field, $event)" :class="btn.classes">
-                {{ btn.label }}
-              </button>
-            </div>
-          </div>
-          <div class="hint" v-if="field.hint">{{ fieldHint(field) }}</div>
-          <div class="errors help-block" v-if="fieldErrors(field).length &gt; 0"><span
-            v-for="(error, index) in fieldErrors(field)" track-by="index">{{ error }}</span></div>
-        </div>
-      </template>
+    <fieldset v-if="listFileds.length > 0" :is="tag">
+      <field-input storeNamespace="formSchema/id1"></field-input>
     </fieldset>
-    <template v-for="group in groups">
-      <fieldset :is="groupTag">
-        <slot v-if="group.legend" v-bind:legend="group.legend">
-          <legend>{{ group.legend }}</legend>
-        </slot>
-        <template v-for="field in group.fields">
-          <div class="form-group" v-if="fieldVisible(field)" :class="getFieldRowClasses(field)">
-            <label v-if="fieldTypeHasLabel(field)" :for="getFieldID(field)">{{ field.label }}<span class="help"
-                                                                                                   v-if="field.help"><i
-              class="icon"></i>
-              <div class="helpText" v-html="field.help"></div></span></label>
-            <div class="field-wrap">
-              <component :is="getFieldType(field)" :disabled="fieldDisabled(field)" :model="model" :schema="field"
-                         :formOptions="options" @model-updated="modelUpdated" @validated="onFieldValidated"></component>
-              <div class="buttons" v-if="buttonVisibility(field)">
-                <button v-for="btn in field.buttons" @click="buttonClickHandler(btn, field, $event)"
-                        :class="btn.classes">{{ btn.label }}
-                </button>
-              </div>
-            </div>
-            <div class="hint" v-if="field.hint">{{ field.hint }}</div>
-            <div class="errors help-block" v-if="fieldErrors(field).length &gt; 0"><span
-              v-for="(error, index) in fieldErrors(field)" track-by="index">{{ error }}</span></div>
-          </div>
-        </template>
-      </fieldset>
-    </template>
   </div>
 
 </template>
 
 <script>
-  import ScheamStore from './store'
+  import { each } from 'lodash'
+  // import ScheamStore from './store/schema-store'
   import StoreNamespaceMixIn from './mixin/store-namespace'
-  import { namespaceToArray } from './helper'
+  import { getNamespacedDispatch } from './helper' /* namespaceToArray, */
+  import FieldInput from './fields/core/fieldInput'
+
+  let fieldComponents = {}
+
+  let coreFields = require.context('./fields/core', false, /^\.\/field([\w-_]+)\.vue$/)
+
+  each(coreFields.keys(), (key) => {
+    let compName = key.replace(/^\.\//, '').replace(/\.vue/, '')
+    fieldComponents[compName] = coreFields(key)
+  })
+  console.log(fieldComponents)
+
 
   export default {
+    components: {FieldInput},
     name: 'VueFormBuilder',
     mixins: [StoreNamespaceMixIn],
+    inject: {
+      schemaNamespace: 'schemaNamespace',
+      modelNamespace: 'modelNamespace',
+      schema: 'schema',
+      storeNamespace: 'schemaNamespace'
+    },
     props: {
-      schema: {
+      /* schema: {
         type: Object,
         required: true,
         default: {
@@ -101,8 +73,7 @@
         type: String,
         default: 'model',
         required: true
-      },
-      /* storeNamespace: {
+      }, storeNamespace: {
         type: String,
         required: true,
         default: {}
@@ -139,7 +110,44 @@
       }
     },
     created () {
-      this.$store.registerModule(namespaceToArray(this.schemaNamespace), ScheamStore)
+      // install store1
+      // this.$store.registerModule(namespaceToArray(this.schemaNamespace), ScheamStore)
+      this.initSchema()
+    },
+    destroyed () {
+      // let store = this.$store
+      // let context = this.$storeCtx
+      // each(context.state.fields, (fStore) => {
+      //   store.unregisterModule(fStore)
+      // })
+      //
+      // each(context.state.groups, (gVal) => {
+      //   each(gVal, (gfStore) => {
+      //     store.unregisterModule(gfStore)
+      //   })
+      // })
+      //
+      // this.$store.unregisterModule(namespaceToArray(this.schemaNamespace))
+    },
+    methods: {
+      initSchema: function () {
+        let value = this.schema
+        let schemaNamespace = this.schemaNamespace
+        let modelNamespace = this.modelNamespace
+        let dispatch = getNamespacedDispatch(schemaNamespace, this.$store)
+        dispatch({
+          type: 'init',
+          value,
+          schemaNamespace,
+          modelNamespace
+        })
+      }
+    },
+    computed: {
+      listFileds: function () {
+        let context = this.$storeCtx
+        return context.state.fields
+      }
     }
   }
 </script>

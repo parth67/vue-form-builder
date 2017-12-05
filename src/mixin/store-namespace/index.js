@@ -1,35 +1,24 @@
-import { createNamespacedHelpers } from 'vuex'
+import { getNamespacedState, getNamespacedDispatch, getNamespacedCommit, getNamespacedGetter } from '@/helper'
 
 export default {
   props: {
     storeNamespace: {
-      required: true,
-      default: null,
-      type: String
+      type: String,
+      required: false
     }
   },
-  created: injectStoreCtx
+  beforeMount: injectStoreCtx
 }
 
 function injectStoreCtx () {
-  const options = this.storeNamespace
+  const namespace = this.storeNamespace
   // store injection
-  if (options.storeNamespace && this.$store) {
-    let namespaced = createNamespacedHelpers(options.storeNamespace)
+  if (namespace && this.$store) {
     this.$storeCtx = {
-      mapState: namespaced.mapState,
-      mapGetters: namespaced.mapGetters,
-      mapMutations: namespaced.mapMutations,
-      mapActions: namespaced.mapActions
+      state: getNamespacedState(namespace, this.$store),
+      dispatch: getNamespacedDispatch(namespace, this.$store),
+      commit: getNamespacedCommit(namespace, this.$store),
+      getters: getNamespacedGetter(namespace, this.$store)
     }
-  } else if (options.parent && options.parent.$storeCtx) {
-    this.$storeCtx = options.parent.$storeCtx
   }
-}
-
-function getNamespacedCaller (namespace, store, arrowFunc = ((state) => state)) {
-  let mapState = createNamespacedHelpers(namespace).mapState({
-    value: arrowFunc
-  })
-  return mapState.value.bind({$store: store})
 }

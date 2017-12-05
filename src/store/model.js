@@ -1,10 +1,13 @@
 import Vue from 'vue'
 
 const state = {
-  a: null
+  a: 123
 }
 const getters = {
   // Getters to access your store values
+  getA (state) {
+    return state.a
+  }
 }
 
 const arrayIndexRegex = /([^[]+)\[(\d+)\]$/
