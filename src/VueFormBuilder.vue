@@ -1,35 +1,44 @@
 <template>
 
   <div class="vue-form-generator" v-if="schema != null">
-    <fieldset v-if="listFileds.length > 0" :is="tag">
-      <field-input storeNamespace="formSchema/id1"></field-input>
+    <fieldset v-if="fields.length > 0" :is="tag">
+      <template v-for="field in fields">
+        <field-wrapper :storeNamespace="field.join('/')"></field-wrapper>
+      </template>
     </fieldset>
+
+    <template v-for="(group, id) in groups">
+      <fieldset :is="groupTag">
+        <slot v-if="groupsLabel[id]" v-bind:legend="groupsLabel[id]">
+          <legend>{{ groupsLabel[id] }}</legend>
+        </slot>
+        <template v-for="field in group">
+          <field-wrapper :storeNamespace="field.join('/')"></field-wrapper>
+        </template>
+      </fieldset>
+    </template>
+
   </div>
 
 </template>
 
 <script>
-  import { each } from 'lodash'
-  // import ScheamStore from './store/schema-store'
-  import StoreNamespaceMixIn from './mixin/store-namespace'
-  import { getNamespacedDispatch } from './helper' /* namespaceToArray, */
-  import FieldInput from './fields/core/fieldInput'
-
-  let fieldComponents = {}
-
-  let coreFields = require.context('./fields/core', false, /^\.\/field([\w-_]+)\.vue$/)
-
-  each(coreFields.keys(), (key) => {
-    let compName = key.replace(/^\.\//, '').replace(/\.vue/, '')
-    fieldComponents[compName] = coreFields(key)
-  })
-  console.log(fieldComponents)
-
+  import FieldWrapper from './fields/fieldWrapper'
+  // import { each } from 'lodash'
+  import ScheamStore from './store/schema-store'
+  // import StoreNamespaceMixIn from './mixin/store-namespace'
+  import {
+    namespaceToArray,
+    getNamespacedDispatch,
+    getNamespacedState,
+    arrayToNamespace
+  } from './helper'
 
   export default {
-    components: {FieldInput},
+    components: {
+      FieldWrapper: FieldWrapper
+    },
     name: 'VueFormBuilder',
-    mixins: [StoreNamespaceMixIn],
     inject: {
       schemaNamespace: 'schemaNamespace',
       modelNamespace: 'modelNamespace',
@@ -110,24 +119,16 @@
       }
     },
     created () {
-      // install store1
-      // this.$store.registerModule(namespaceToArray(this.schemaNamespace), ScheamStore)
+      // install store
+      this.$store.registerModule(namespaceToArray(this.schemaNamespace), ScheamStore)
       this.initSchema()
     },
     destroyed () {
-      // let store = this.$store
-      // let context = this.$storeCtx
-      // each(context.state.fields, (fStore) => {
-      //   store.unregisterModule(fStore)
-      // })
-      //
-      // each(context.state.groups, (gVal) => {
-      //   each(gVal, (gfStore) => {
-      //     store.unregisterModule(gfStore)
-      //   })
-      // })
-      //
-      // this.$store.unregisterModule(namespaceToArray(this.schemaNamespace))
+      let dispatch = getNamespacedDispatch(this.schemaNamespace, this.$store)
+      dispatch({
+        type: 'dispose'
+      })
+      this.$store.unregisterModule(namespaceToArray(this.schemaNamespace))
     },
     methods: {
       initSchema: function () {
@@ -141,12 +142,25 @@
           schemaNamespace,
           modelNamespace
         })
+      },
+      getFieldType: function (field) {
+        let namespace = arrayToNamespace(field)
+        let state = getNamespacedState(namespace, this.$store)
+        return 'field-' + state.type
       }
     },
     computed: {
-      listFileds: function () {
-        let context = this.$storeCtx
-        return context.state.fields
+      fields: function () {
+        let state = getNamespacedState(this.schemaNamespace, this.$store)
+        return state.fields
+      },
+      groups: function () {
+        let state = getNamespacedState(this.schemaNamespace, this.$store)
+        return state.groups
+      },
+      groupsLabel: function () {
+        let state = getNamespacedState(this.schemaNamespace, this.$store)
+        return state.groupsLabel
       }
     }
   }

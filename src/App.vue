@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <router-view/>
+    <pre>{{ $store.state.model | pretty }}</pre>
+
     <VueFormBuilder></VueFormBuilder>
   </div>
 </template>
@@ -18,7 +19,9 @@
         fields: [{
           id: 'id1',
           model: 'a',
-          disabled: false
+          disabled: false,
+          type: 'input',
+          label: 'Field-1'
           // formatValueToField: (value) => {
           //   if (value) {
           //     return (value + '').replace(' VAL', '')
@@ -33,14 +36,18 @@
         }],
         groups: [{
           id: 'grp1',
+          label: 'LBL1',
           fields: [{
             id: 'id1',
-            model: 'a',
+            type: 'input',
+            model: 'b',
             dependsOn: ['id1'],
             watcher: function watchid1 () { console.log('notified', arguments) }
           }, {
             id: 'id2',
-            model: 'a',
+            model: 'c',
+            type: 'checkbox',
+            inputType: 'password',
             dependsOn: ['id1'],
             unknown: 'id',
             watcher: function watchid1 () { console.log('notified', arguments) }
@@ -50,6 +57,11 @@
       },
       schemaNamespace: 'formSchema',
       modelNamespace: 'model'
+    },
+    filters: {
+      pretty: function (value) {
+        return JSON.stringify(value, null, 2)
+      }
     }
   }
 </script>
@@ -59,7 +71,6 @@
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-align: center;
     color: #2c3e50;
     margin-top: 60px;
   }

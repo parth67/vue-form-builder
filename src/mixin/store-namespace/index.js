@@ -1,10 +1,10 @@
-import { getNamespacedState, getNamespacedDispatch, getNamespacedCommit, getNamespacedGetter } from '@/helper'
+import { getNamespacedContext } from '@/helper'
 
 export default {
   props: {
     storeNamespace: {
       type: String,
-      required: false
+      required: true
     }
   },
   beforeMount: injectStoreCtx
@@ -14,11 +14,6 @@ function injectStoreCtx () {
   const namespace = this.storeNamespace
   // store injection
   if (namespace && this.$store) {
-    this.$storeCtx = {
-      state: getNamespacedState(namespace, this.$store),
-      dispatch: getNamespacedDispatch(namespace, this.$store),
-      commit: getNamespacedCommit(namespace, this.$store),
-      getters: getNamespacedGetter(namespace, this.$store)
-    }
+    this.$storeCtx = getNamespacedContext(namespace, this.$store)
   }
 }

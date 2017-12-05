@@ -1,5 +1,5 @@
-import { each, isArray, isFunction, isObject } from 'lodash'
-import { getNotifyCallFunction, namespaceToArray, setVmForVal } from '../helper'
+import { each, isArray, isFunction, isObject, isString, uniqueId } from 'lodash'
+import { getNotifyCallFunction, namespaceToArray, setVmForVal, slugify } from '../helper'
 import fieldStore from './field-store'
 import Vue from 'vue'
 // import groupStore from './group-store'
@@ -9,18 +9,12 @@ const state = function () {
     modelNamespace: '',
     schemaNamespace: '',
     fields: [],
-    groups: {}
+    groups: {},
+    groupsLabel: {}
   }
 }
 
-const getters = {
-  modelNamespace (state) {
-    return state.modelNamespace
-  },
-  schemaNamespace (state) {
-    return state.schemaNamespace
-  }
-}
+const getters = {}
 
 const mutations = {
   setSchemaNamespace (state, payload) {
@@ -36,14 +30,19 @@ const mutations = {
     let gId = payload.groupId
     let fId = payload.fieldId
     let gMap = state.groups[gId]
-    if (isObject(gMap)) {
+    if (isArray(gMap)) {
       gMap.push(fId)
     } else {
       Vue.set(state.groups, gId, [fId])
     }
   },
+  addGroupsLabel (state, payload) {
+    let {groupId, label} = payload
+    Vue.set(state.groupsLabel, groupId, label)
+  },
   clearGroups (state) {
     state.groups = {}
+    state.groupsLabel = {}
   },
   clearFields (state) {
     state.fields.splice(0)
@@ -54,6 +53,24 @@ const actions = {
   init (context, payload) {
     let schema = payload.value
     let {schemaNamespace, modelNamespace} = payload
+
+    each(context.state.fields, (fStore) => {
+      this.unregisterModule(fStore)
+    })
+
+    each(context.state.groups, (gVal) => {
+      each(gVal, (gfStore) => {
+        this.unregisterModule(gfStore)
+      })
+    })
+
+    context.commit({
+      type: 'clearGroups'
+    })
+
+    context.commit({
+      type: 'clearFields'
+    })
 
     context.commit({
       type: 'setSchemaNamespace',
@@ -88,6 +105,18 @@ const actions = {
     let store = this
 
     function processField (field) {
+
+      if (isString(field.styleClasses)) {
+        field.styleClasses = [field.styleClasses]
+      }
+
+      // if id is not there generate one
+      if (field.id === undefined) {
+        field.id = slugify(uniqueId(field.model))
+      } else {
+        field.id = slugify(field.id)
+      }
+
       // dependsOn and wather must be defined
       if (isArray(field.dependsOn) &&
         isFunction(field.watcher)) {
@@ -118,6 +147,7 @@ const actions = {
       delete field.formatValueToField
       delete field.formatValueToModel
       delete field.watcher
+      // delete field.dependsOn
     }
 
     each(schema.fields, (field) => {
@@ -125,12 +155,17 @@ const actions = {
     })
 
     each(schema.groups, (gVal) => {
+      context.commit({
+        type: 'addGroupsLabel',
+        groupId: gVal.id,
+        label: gVal.label
+      })
       each(gVal.fields, (fVal) => {
         processField(fVal)
       })
     })
 
-    let schemaNamespaceArr = namespaceToArray(context.getters.schemaNamespace)
+    let schemaNamespaceArr = namespaceToArray(context.state.schemaNamespace)
     // now inject real notify chain using dependencyMap
     each(schema.fields, (field) => {
       let fid = field.id

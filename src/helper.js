@@ -14,13 +14,13 @@ export function setVmForVal (store, namespace, model, formatValueToField, format
               return isFunction(formatValueToField) ? formatValueToField(value) : value
             }
           })
-          return mapState.value.call({ $store: store })
+          return mapState.value.call({$store: store})
         },
         set: function (newVal) {
           let mapActions = createNamespacedHelpers(namespace).mapActions({
             set: 'set'
           })
-          mapActions.set.call({ $store: store }, {
+          mapActions.set.call({$store: store}, {
             key: model,
             value: isFunction(formatValueToModel) ? formatValueToModel(newVal) : newVal
           })
@@ -137,6 +137,10 @@ export function getNotifyCallFunction (...args) {
   }
 }
 
+export function arrayToNamespace (ary) {
+  return ary.join('/')
+}
+
 export function namespaceToArray (namespace) {
   return filter(namespace.split('/'), (value) => {
     return value !== ''
@@ -149,7 +153,6 @@ export function getNamespacedState (namespace, store) {
   let mapState = helper.mapState({
     dummy: (state) => state
   })
-  console.log(helper, mapState, 'mapstate')
   return mapState.dummy.call({$store: store})
 }
 
@@ -189,6 +192,15 @@ export function getNamespacedGetter (namespace, store) {
       dummy: type
     })
     return mapGetters.dummy.call({$store: store})
+  }
+}
+
+export function getNamespacedContext (namespace, store) {
+  return {
+    state: getNamespacedState(namespace, store),
+    dispatch: getNamespacedDispatch(namespace, store),
+    commit: getNamespacedCommit(namespace, store),
+    getters: getNamespacedGetter(namespace, store)
   }
 }
 

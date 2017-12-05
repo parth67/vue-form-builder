@@ -4,7 +4,7 @@ export default {
   mixins: [StoreNamespace],
   methods: {},
   computed: {
-    isDisabled () {
+    disabled () {
       let context = this.$storeCtx
       return context.state.disabled
     },

@@ -1,6 +1,7 @@
 // TODO : remove file
 const state = {
   // Initial state of group-store
+  legend: ''
 }
 
 const getters = {

@@ -17,7 +17,8 @@ const state = function () {
     // editable see mutation
     visible: true,
     disabled: false,
-    styleClass: '',
+    styleClasses: [],
+    fieldClasses: '',
     errors: [],
 
     // methods for processing
@@ -57,18 +58,21 @@ const getters = {
   savedValue (state) {
     return state._private.savedValue
   },
-  label (state) {
-    return state.label
-  },
-  hint (state) {
-    return state.hint
-  },
-  helpText (state) {
-    return state.helpText
-  },
-  errors (state) {
-    return state.errors
+  hasErrors (state) {
+    return state.errors.length > 0
   }
+  // label (state) {
+  //   return state.label
+  // },
+  // hint (state) {
+  //   return state.hint
+  // },
+  // helpText (state) {
+  //   return state.helpText
+  // },
+  // errors (state) {
+  //   return state.errors
+  // }
 }
 
 const actions = {
@@ -86,7 +90,6 @@ const actions = {
     // fieldDef._private = {}
     // defineValueProperty(fieldDef._private, this, modelNamespace, fieldDef.model, fieldDef.formatValueToField, fieldDef.formatValueToModel)
 
-    console.log(fieldDef)
     commit({
       type: 'merge',
       value: fieldDef
@@ -136,11 +139,11 @@ const actions = {
       if (isFunction(context.state.onValidate)) {
         context.state.onValidate(context, flattenErrors)
       }
+    }
 
-      // call dependency change notifier
-      if (isFunction(context.state.notifier)) {
-        context.state.notifier(context)
-      }
+    // call dependency change notifier
+    if (isFunction(context.state.notifier)) {
+      context.state.notifier(context)
     }
   },
   setValue (context, payload) {
@@ -206,9 +209,9 @@ const mutations = {
   enable (state) {
     state.disabled = false
   },
-  setStyleClass (state, payload) {
-    const {value = ''} = payload
-    state.styleClass = value
+  setStyleClasses (state, payload) {
+    const {value = []} = payload
+    state.styleClasses = value
   },
   setErrors (state, payload) {
     const {value = ''} = payload
@@ -216,6 +219,10 @@ const mutations = {
   },
   clearErrors (state) {
     state.errors.splice(0)
+  },
+  setAttr (state, payload) {
+    let {key, value} = payload
+    Vue.set(state, key, value)
   },
   // private
   setValue (state, payload) {
