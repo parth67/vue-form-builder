@@ -136,11 +136,16 @@ const actions = {
 
       // onChange and onValidate needs to be bound to this.
       if (isFunction(field.onChange)) {
-        field.onChange.bind(null, context)
+        field.onChange = field.onChange.bind(null, context)
       }
       if (isFunction(field.onValidate)) {
-        field.onValidate.bind(null, context)
+        field.onValidate = field.onValidate.bind(null, context)
       }
+
+      if (isFunction(field.items)) {
+        field.items = field.items.bind(null, context)
+      }
+
       field._private = {}
       // defineValueProperty(field._private, store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)
       field._private._vm = setVmForVal(store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)

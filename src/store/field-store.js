@@ -77,7 +77,7 @@ const getters = {
 
 const actions = {
   // Asynchronous mutations commits to modify field-store
-  init ({state, commit}, payload) {
+  init (context, payload) {
     let {value: fieldDef} = payload
 
     // validator must be array of function.
@@ -86,11 +86,15 @@ const actions = {
       fieldDef.validator = [fieldDef.validator]
     }
 
+    if (isFunction(fieldDef.items)) {
+      fieldDef.items = fieldDef.items.bind(null, context)
+    }
+
     // define private space to save value
     // fieldDef._private = {}
     // defineValueProperty(fieldDef._private, this, modelNamespace, fieldDef.model, fieldDef.formatValueToField, fieldDef.formatValueToModel)
 
-    commit({
+    context.commit({
       type: 'merge',
       value: fieldDef
     })

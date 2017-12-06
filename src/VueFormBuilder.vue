@@ -7,7 +7,7 @@
       </template>
     </fieldset>
 
-    <template v-for="(group, id) in groups">
+    <template v-for="(group, id) in groups" v-if="isGroupVisible(id)">
       <fieldset :is="groupTag">
         <slot v-if="groupsLabel[id]" v-bind:legend="groupsLabel[id]">
           <legend>{{ groupsLabel[id] }}</legend>
@@ -24,7 +24,7 @@
 
 <script>
   import FieldWrapper from './fields/fieldWrapper'
-  // import { each } from 'lodash'
+  import { findIndex } from 'lodash'
   import ScheamStore from './store/schema-store'
   // import StoreNamespaceMixIn from './mixin/store-namespace'
   import {
@@ -46,47 +46,11 @@
       storeNamespace: 'schemaNamespace'
     },
     props: {
-      /* schema: {
-        type: Object,
-        required: true,
-        default: {
-          modelNamespace: 'a/b',
-          fields: [],
-          groups: [{
-            legend: 'Group 1',
-            fields: [{
-              id: 'id1',
-              model: 'a.b',
-              type: 'input',
-              visible: true,
-              disabled: false,
-              styleClass: 'col-md-6',
-              default: 'val', // if attribute is added.
-              validator: function () {},
-              set: function (commiter, value) {},
-              get: function (getter) {},
-              onChange: function () {},
-              onValidate: function () {},
-              depends: ['id2'],
-              watcher: function (def, oldVal, newVal) {}
-            }]
-          }]
-        }
-      },
-      schemaNamespace: {
-        type: String,
-        default: 'formSchema',
-        required: true
-      },
-      modelNamespace: {
-        type: String,
-        default: 'model',
-        required: true
-      }, storeNamespace: {
-        type: String,
-        required: true,
-        default: {}
-      }, */
+      // schema: {
+      //   type: Object,
+      //   required: true,
+      //   default: {}
+      // },
       options: {
         type: Object,
         default () {
@@ -112,9 +76,9 @@
           return value.length > 0
         }
       },
-      currentGroup: {
-        type: String,
-        default: null,
+      hideGroup: {
+        type: Array,
+        default: () => [],
         required: false
       }
     },
@@ -147,6 +111,13 @@
         let namespace = arrayToNamespace(field)
         let state = getNamespacedState(namespace, this.$store)
         return 'field-' + state.type
+      },
+      isGroupVisible: function (id) {
+        if (findIndex(this.hideGroup, id) === -1) {
+          return true
+        } else {
+          return false
+        }
       }
     },
     computed: {
@@ -166,6 +137,6 @@
   }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 
 </style>

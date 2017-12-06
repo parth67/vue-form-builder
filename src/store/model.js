@@ -3,7 +3,7 @@ import Vue from 'vue'
 const state = {
   a: 123,
   b: 23,
-  c: true
+  c: 2
 }
 const getters = {
   // Getters to access your store values

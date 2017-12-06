@@ -2,7 +2,7 @@
   <div id="app">
     <pre>{{ $store.state.model | pretty }}</pre>
 
-    <VueFormBuilder></VueFormBuilder>
+    <VueFormBuilder ></VueFormBuilder>
   </div>
 </template>
 
@@ -47,8 +47,15 @@
           }, {
             id: 'id2',
             model: 'c',
-            items: [{ value: '1', label: 'item1' }, '2', '3'],
-            type: 'check-list',
+            items: function (schemaCtx, fieldCtx) {
+              console.log('called', fieldCtx.getters['value'])
+              if (fieldCtx.getters['value'] === 1) {
+                return [{value: 1, label: 'item1', group: 'Grp1'}, 2]
+              } else {
+                return [{value: 1, label: 'item1', group: 'Grp1'}, 2, 3]
+              }
+            },
+            type: 'radio',
             inputType: 'password',
             dependsOn: ['id1'],
             unknown: 'id',

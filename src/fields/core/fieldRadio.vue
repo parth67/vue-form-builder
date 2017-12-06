@@ -1,8 +1,8 @@
 <template>
-  <div class="check-list wrapper">
-    <div class="checkbox" v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
+  <div class="radio-list wrapper">
+    <div class="radio" v-for="(item, index) in items" :key="index">
       <label>
-        <input type="checkbox" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
+        <input type="radio" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
         {{getLabel(item)}}
       </label>
     </div>
@@ -11,16 +11,12 @@
 
 <script>
   import AbstractFieldMixin from '@/mixin/abstract-field'
-  import { isObject, isArray, isFunction } from 'lodash'
+  import { isObject, isFunction } from 'lodash'
 
   export default {
-    name: 'field-check-list',
+    name: 'field-radio',
     mixins: [AbstractFieldMixin],
-    mounted () {
-      if (this.fieldOptions.ensureArray === true) {
-        this.ensureValAsArray()
-      }
-    },
+
     computed: {
       fieldOptions () {
         return this.$storeCtx.state.fieldOptions || {}
@@ -54,12 +50,6 @@
           return true
         }
         return false
-      },
-      ensureValAsArray () {
-        if (!isArray(this.value)) {
-          this.value = []
-        }
-        return true
       }
     }
   }
