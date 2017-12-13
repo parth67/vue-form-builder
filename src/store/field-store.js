@@ -47,7 +47,7 @@ const state = function () {
 const getters = {
   // Getters to access field-store values
   value (state) {
-    return state._private._vm.value
+    return state._private.value
   },
   privateData (state) {
     return state._private
@@ -86,40 +86,74 @@ const actions = {
       fieldDef.validator = [fieldDef.validator]
     }
 
-    if (isFunction(fieldDef.items)) {
-      fieldDef.items = fieldDef.items.bind(null, context)
-    }
-
     // define private space to save value
     // fieldDef._private = {}
     // defineValueProperty(fieldDef._private, this, modelNamespace, fieldDef.model, fieldDef.formatValueToField, fieldDef.formatValueToModel)
+
+    if (isFunction(fieldDef.registerWatcher)) {
+      // on change of this field we need to notify others about change.
+      // we will setup Vue instance for this purpose with watcher attached
+      // to value of this field
+      // eslint-disable-next-line func-names, no-new
+      // new Vue({
+      //   computed: {
+      //     watchVal () {
+      //       console.log('recompute watchval')
+      //       return context.state._private.value
+      //     }
+      //   },
+      //   watch: {
+      //     'watchVal': {
+      //       handler: function (val, oldVal) {
+      //         context.dispatch({
+      //           type: 'notify',
+      //           newVal: val,
+      //           oldVal: oldVal
+      //         })
+      //       },
+      //       immediate: true
+      //     }
+      //   }
+      // })
+      fieldDef.registerWatcher((newVal, oldVal) => {
+        context.dispatch({
+          type: 'notify',
+          newVal: newVal,
+          oldVal: oldVal
+        })
+      })
+    }
 
     context.commit({
       type: 'merge',
       value: fieldDef
     })
   },
-  hide ({commit, dispatch}, payload) {
-    commit({
-      type: 'preserveValue'
-    })
-    commit({
-      type: 'hide'
-    })
-    return dispatch({
-      type: 'validate'
-    })
+  hide ({commit, dispatch, state}, payload) {
+    if (state.visible === true) {
+      commit({
+        type: 'preserveValue'
+      })
+      commit({
+        type: 'hide'
+      })
+      return dispatch({
+        type: 'validate'
+      })
+    }
   },
-  show ({commit, dispatch}, payload) {
-    commit({
-      type: 'restoreValue'
-    })
-    commit({
-      type: 'show'
-    })
-    return dispatch({
-      type: 'validate'
-    })
+  show ({commit, dispatch, state}, payload) {
+    if (state.visible === false) {
+      commit({
+        type: 'restoreValue'
+      })
+      commit({
+        type: 'show'
+      })
+      return dispatch({
+        type: 'validate'
+      })
+    }
   },
   validate (context) {
     let validatorArray = state.validator
@@ -141,13 +175,18 @@ const actions = {
 
       // call onchange
       if (isFunction(context.state.onValidate)) {
-        context.state.onValidate(context, flattenErrors)
+        context.state.onValidate(flattenErrors)
       }
     }
 
+    // return context.dispatch({
+    //   type: 'notify'
+    // })
+  },
+  notify (context, payload) {
     // call dependency change notifier
     if (isFunction(context.state.notifier)) {
-      context.state.notifier(context)
+      context.state.notifier(context, context.state.id, payload.newVal, payload.oldVal)
     }
   },
   setValue (context, payload) {
@@ -171,9 +210,10 @@ const actions = {
 
     // call onchange
     if (isFunction(context.state.onChange)) {
-      context.state.onChange(context, oldVal, newVal)
+      context.state.onChange(oldVal, newVal)
     }
 
+    // TODO should we move to watcher. we will need watcher for all
     // call validate
     return context.dispatch({
       type: 'validate'
@@ -231,15 +271,15 @@ const mutations = {
   // private
   setValue (state, payload) {
     const {value = ''} = payload
-    state._private._vm.value = value
+    state._private.value = value
   },
   // set saved val
   preserveValue (state) {
-    state._private.savedValue = state._private._vm.value
-    state._private._vm.value = null
+    state._private.savedValue = state._private.value
+    state._private.value = null
   },
   restoreValue (state) {
-    state._private._vm.value = state._private.savedValue
+    state._private.value = state._private.savedValue
     state._private.savedValue = null
   }
 }

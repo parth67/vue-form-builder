@@ -1,7 +1,14 @@
-import StoreNamespace from '@/mixin/store-namespace'
+import StoreNamespace from '../store-namespace'
 
 export default {
   mixins: [StoreNamespace],
+  mounted () {
+    this.$nextTick(function () {
+      this.$storeCtx.dispatch({
+        type: 'notify'
+      })
+    })
+  },
   methods: {},
   computed: {
     disabled () {

@@ -8,11 +8,12 @@
 </template>
 
 <script>
-  import AbstractFieldMixin from '@/mixin/abstract-field'
+  import AbstractFieldMixin from '../../mixin/abstract-field'
+  import AsyncComputed from '../../mixin/async-computed'
 
   export default {
     name: 'field-checkbox',
-    mixins: [AbstractFieldMixin]
+    mixins: [AbstractFieldMixin, AsyncComputed]
   }
 </script>
 

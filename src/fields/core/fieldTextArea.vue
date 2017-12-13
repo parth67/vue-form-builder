@@ -12,7 +12,7 @@
 </template>
 
 <script>
-  import AbstractFieldMixin from '@/mixin/abstract-field'
+  import AbstractFieldMixin from '../../mixin/abstract-field'
 
   export default {
     name: 'field-text-area',

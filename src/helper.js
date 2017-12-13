@@ -1,62 +1,63 @@
-import { get as objGet, isFunction, filter, isObject } from 'lodash'
+import { get as objGet, isFunction, filter, isObject, isString } from 'lodash'
 import { createNamespacedHelpers } from 'vuex'
-import Vue from 'vue'
+// import Vue from 'vue'
 
-export function setVmForVal (store, namespace, model, formatValueToField, formatValueToModel) {
-  let vm = new Vue({
-    store,
-    computed: {
-      value: {
-        get: function () {
-          let mapState = createNamespacedHelpers(namespace).mapState({
-            value: (state) => {
-              let value = objGet(state, model, null)
-              return isFunction(formatValueToField) ? formatValueToField(value) : value
-            }
-          })
-          return mapState.value.call({$store: store})
-        },
-        set: function (newVal) {
-          let mapActions = createNamespacedHelpers(namespace).mapActions({
-            set: 'set'
-          })
-          mapActions.set.call({$store: store}, {
-            key: model,
-            value: isFunction(formatValueToModel) ? formatValueToModel(newVal) : newVal
-          })
-        }
+// export function setVmForWatch (store, modelNamespace, model) {
+//   let registerFunc = null
+//   // eslint-disable-next-line func-names, no-new
+//   window.vms[model] = new Vue({
+//     model: model,
+//     store,
+//     computed: {
+//       value: function () {
+//         let mContext = getModuleByNamespace(store, modelNamespace)
+//         console.log('recomputing', this.$options.model, model, mContext.state)
+//         let value = objGet(mContext.state, model, null)
+//         console.log(value)
+//         return value
+//       }
+//     },
+//     watch: {
+//       'value': {
+//         handler: function (val, oldVal) {
+//           if (isFunction(registerFunc)) {
+//             registerFunc(val, oldVal)
+//           }
+//         },
+//         immediate: true
+//       }
+//     }
+//   })
+//   return (passFunc) => {
+//     registerFunc = passFunc
+//   }
+// }
+
+function defaultGetter (store, namespace, model, formatValueToField) {
+  return function getter () {
+    let mapState = createNamespacedHelpers(namespace).mapState({
+      value: (state) => {
+        let value = objGet(state, model, null)
+        return isFunction(formatValueToField) ? formatValueToField(value) : value
       }
-    }
-
-  })
-  return vm
+    })
+    return mapState.value.call({$store: store})
+  }
 }
 
-// function defaultGetter (store, namespace, model, formatValueToField) {
-//   return function getter () {
-//     let mapState = createNamespacedHelpers(namespace).mapState({
-//       value: (state) => {
-//         let value = objGet(state, model, null)
-//         return isFunction(formatValueToField) ? formatValueToField(value) : value
-//       }
-//     })
-//     return mapState.value.call({$store: store})
-//   }
-// }
-//
-// function defaultSetter (store, namespace, model, formatValueToModel) {
-//   return function commiter (value) {
-//     let mapActions = createNamespacedHelpers(namespace).mapActions({
-//       set: 'set'
-//     })
-//     mapActions.set.call({$store: store}, {
-//       key: model,
-//       value: isFunction(formatValueToModel) ? formatValueToModel(value) : value
-//     })
-//   }
-// }
+function defaultSetter (store, namespace, model, formatValueToModel) {
+  return function commiter (value) {
+    let mapActions = createNamespacedHelpers(namespace).mapActions({
+      set: 'set'
+    })
+    mapActions.set.call({$store: store}, {
+      key: model,
+      value: isFunction(formatValueToModel) ? formatValueToModel(value) : value
+    })
+  }
+}
 
-/* export function getModuleByNamespace (store, namespace) {
+export function getModuleByNamespace (store, namespace) {
   let retVal = {
     dispatch: store.dispatch,
     commit: store.commit,
@@ -80,28 +81,28 @@ export function setVmForVal (store, namespace, model, formatValueToField, format
   }
 
   return retVal
-} */
+}
 
-// export function defineValueProperty (obj, store, namespace, model, formatValueToField, formatValueToModel) {
-//   let getter = defaultGetter(store, namespace, model, formatValueToField)
-//   let setter = defaultSetter(store, namespace, model, formatValueToModel)
-//   Object.defineProperty(obj, 'value', {
-//     enumerable: true,
-//     configurable: true,
-//     get: function valueGetter () {
-//       return getter()
-//     },
-//     set: function (newVal) {
-//       let value = getter()
-//       /* eslint-disable no-self-compare */
-//       if (newVal === value || (newVal !== newVal && value !== value)) {
-//         return
-//       }
-//       /* eslint-enable no-self-compare */
-//       setter(newVal)
-//     }
-//   })
-// }
+export function defineValueProperty (obj, store, namespace, model, formatValueToField, formatValueToModel) {
+  let getter = defaultGetter(store, namespace, model, formatValueToField)
+  let setter = defaultSetter(store, namespace, model, formatValueToModel)
+  Object.defineProperty(obj, 'value', {
+    enumerable: true,
+    configurable: true,
+    get: function valueGetter () {
+      return getter()
+    },
+    set: function (newVal) {
+      let value = getter()
+      /* eslint-disable no-self-compare */
+      if (newVal === value || (newVal !== newVal && value !== value)) {
+        return
+      }
+      /* eslint-enable no-self-compare */
+      setter(newVal)
+    }
+  })
+}
 
 export function createNamespacedStore (storeDef) {
   return {...storeDef, namespaced: true}
@@ -114,7 +115,6 @@ export function slugify (name = '') {
   // avoiding extra dependencies.
     .toString()
     .trim()
-    .toLowerCase()
     // Spaces to dashes
     .replace(/ /g, '-')
     // Multiple dashes to one
@@ -130,9 +130,9 @@ current impl is call one by one waiting for each finish (sequential process).
 if required change this to no-wait function
  */
 export function getNotifyCallFunction (...args) {
-  return async function (localContext) {
+  return async function (...passArgs) {
     for (let i = 0; i < args.length; i++) {
-      await args[i](localContext)
+      await args[i](...passArgs)
     }
   }
 }
@@ -205,3 +205,4 @@ export function getNamespacedContext (namespace, store) {
 }
 
 /* *************** */
+

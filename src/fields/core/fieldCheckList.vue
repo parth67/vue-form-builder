@@ -1,6 +1,6 @@
 <template>
-  <div class="check-list wrapper">
-    <div class="checkbox" v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
+  <div class="check-list wrapper" :class="$storeCtx.state.fieldClasses">
+    <div v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
       <label>
         <input type="checkbox" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
         {{getLabel(item)}}
@@ -10,12 +10,13 @@
 </template>
 
 <script>
-  import AbstractFieldMixin from '@/mixin/abstract-field'
+  import AbstractFieldMixin from '../../mixin/abstract-field'
+  import AsyncComputed from '../../mixin/async-computed'
   import { isObject, isArray, isFunction } from 'lodash'
 
   export default {
     name: 'field-check-list',
-    mixins: [AbstractFieldMixin],
+    mixins: [AbstractFieldMixin, AsyncComputed],
     mounted () {
       if (this.fieldOptions.ensureArray === true) {
         this.ensureValAsArray()
@@ -24,7 +25,9 @@
     computed: {
       fieldOptions () {
         return this.$storeCtx.state.fieldOptions || {}
-      },
+      }
+    },
+    asyncComputed: {
       items () {
         let values = this.$storeCtx.state.items
         if (isFunction(values)) {

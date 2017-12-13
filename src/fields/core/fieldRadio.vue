@@ -10,17 +10,20 @@
 </template>
 
 <script>
-  import AbstractFieldMixin from '@/mixin/abstract-field'
+  import AbstractFieldMixin from '../../mixin/abstract-field'
+  import AsyncComputed from '../../mixin/async-computed'
   import { isObject, isFunction } from 'lodash'
 
   export default {
     name: 'field-radio',
-    mixins: [AbstractFieldMixin],
+    mixins: [AbstractFieldMixin, AsyncComputed],
 
     computed: {
       fieldOptions () {
         return this.$storeCtx.state.fieldOptions || {}
-      },
+      }
+    },
+    asyncComputed: {
       items () {
         let values = this.$storeCtx.state.items
         if (isFunction(values)) {
@@ -56,5 +59,7 @@
 </script>
 
 <style>
-
+.wrapper {
+  display: block;
+}
 </style>

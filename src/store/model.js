@@ -3,12 +3,18 @@ import Vue from 'vue'
 const state = {
   a: 123,
   b: 23,
-  c: 2
+  c: []
 }
 const getters = {
   // Getters to access your store values
-  getA (state) {
+  a (state) {
     return state.a
+  },
+  b (state) {
+    return state.b
+  },
+  c (state) {
+    return state.c
   }
 }
 

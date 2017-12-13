@@ -3,6 +3,7 @@
 import Vue from 'vue'
 import App from './App'
 import model from './store/model'
+import _ from 'lodash'
 // import schema from './store/schema-store'
 import Vuex, { createNamespacedHelpers } from 'vuex'
 
@@ -10,6 +11,8 @@ Vue.config.productionTip = false
 Vue.use(Vuex)
 
 window.Vue = Vue
+window.Vuex = Vuex
+window._ = _
 window.createNamespacedHelpers = createNamespacedHelpers
 
 window.$store = new Vuex.Store({
@@ -18,31 +21,6 @@ window.$store = new Vuex.Store({
     // formSchema: schema
   }
 })
-
-/* window.$store.dispatch('init', {
-  schemaNamespace: '',
-  modelNamespace: 'model',
-  value: {
-    fields: [{
-      id: 'id1',
-      model: 'a'
-    }],
-    groups: [{
-      id: 'grp1',
-      fields: [{
-        id: 'id1',
-        model: 'a',
-        dependsOn: ['id1'],
-        watcher: function watchid1 () { console.log('notified', arguments) }
-      }, {
-        id: 'id2',
-        model: 'a',
-        dependsOn: ['id1'],
-        watcher: function watchid1 () { console.log('notified', arguments) }
-      }]
-    }]
-  }
-}) */
 
 window.Vue = Vue
 

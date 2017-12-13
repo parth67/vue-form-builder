@@ -28,13 +28,13 @@
 </template>
 
 <script>
-  import StoreNamespaceMixin from '@/mixin/store-namespace'
+  import StoreNamespaceMixin from '../mixin/store-namespace'
   import { isArray, each, isFunction } from 'lodash'
 
   // start collecting all fields component
   let fieldComponents = {}
 
-  let coreFields = require.context('@/fields/core', false, /^\.\/field([\w-_]+)\.vue$/)
+  let coreFields = require.context('./core', false, /^\.\/field([\w-_]+)\.vue$/)
   each(coreFields.keys(), (key) => {
     let compName = key.replace(/^\.\//, '').replace(/\.vue/, '')
     fieldComponents[compName] = coreFields(key).default

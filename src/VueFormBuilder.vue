@@ -39,18 +39,25 @@
       FieldWrapper: FieldWrapper
     },
     name: 'VueFormBuilder',
-    inject: {
-      schemaNamespace: 'schemaNamespace',
-      modelNamespace: 'modelNamespace',
-      schema: 'schema',
-      storeNamespace: 'schemaNamespace'
+    data () {
+      return {
+        storeNamespace: this.schemaNamespace
+      }
     },
     props: {
-      // schema: {
-      //   type: Object,
-      //   required: true,
-      //   default: {}
-      // },
+      schemaNamespace: {
+        type: String,
+        required: true
+      },
+      modelNamespace: {
+        type: String,
+        required: true
+      },
+      schema: {
+        type: Object,
+        required: true,
+        default: {}
+      },
       options: {
         type: Object,
         default () {

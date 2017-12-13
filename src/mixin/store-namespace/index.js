@@ -1,4 +1,4 @@
-import { getNamespacedContext } from '@/helper'
+import { getNamespacedContext } from '../../helper'
 
 export default {
   props: {

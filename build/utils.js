@@ -57,7 +57,7 @@ exports.cssLoaders = function (options) {
     css: generateLoaders(),
     postcss: generateLoaders(),
     less: generateLoaders('less'),
-    sass: generateLoaders('sass', { indentedSyntax: true }),
+    sass: generateLoaders('sass', {indentedSyntax: true}),
     scss: generateLoaders('sass'),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
@@ -95,4 +95,15 @@ exports.createNotifierCallback = function () {
       icon: path.join(__dirname, 'logo.png')
     })
   }
+}
+
+exports.makeCamelCase = function (name) {
+  let parts = name.split('-')
+  let retVal = ''
+  for (let i = 0; i < parts.length; i++) {
+    let curPart = parts[i]
+    retVal = retVal + (curPart.charAt(0).toUpperCase() + curPart.substr(1))
+  }
+  console.log("retVal", retVal)
+  return retVal
 }

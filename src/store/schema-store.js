@@ -1,5 +1,11 @@
-import { each, isArray, isFunction, isObject, isString, uniqueId } from 'lodash'
-import { getNotifyCallFunction, namespaceToArray, setVmForVal, slugify } from '../helper'
+import { each, isArray, isFunction, isObject, isString, uniqueId, get as objGet } from 'lodash'
+import {
+  getNotifyCallFunction,
+  namespaceToArray,
+  defineValueProperty,
+  slugify,
+  getModuleByNamespace
+} from '../helper'
 import fieldStore from './field-store'
 import Vue from 'vue'
 // import groupStore from './group-store'
@@ -10,7 +16,8 @@ const state = function () {
     schemaNamespace: '',
     fields: [],
     groups: {},
-    groupsLabel: {}
+    groupsLabel: {},
+    watchers: []
   }
 }
 
@@ -46,6 +53,18 @@ const mutations = {
   },
   clearFields (state) {
     state.fields.splice(0)
+  },
+  addWatcher (state, payload) {
+    state.watchers.push(payload.watcher)
+  },
+  clearWatcher (state) {
+    for (let i = 0; i < state.watchers.length; i++) {
+      let unwatch = state.watchers[i]
+      if (isFunction(unwatch)) {
+        unwatch()
+      }
+    }
+    state.watchers.splice(0)
   }
 }
 
@@ -82,6 +101,8 @@ const actions = {
       value: modelNamespace
     })
 
+    // let modelContext = getModuleByNamespace(this, modelNamespace)
+
     // group field id's are changed as 'groupId/fieldId'
     each(schema.groups, (gVal) => {
       const gId = gVal.id
@@ -93,6 +114,7 @@ const actions = {
           console.error(`Filed without id Label: ${fVal.label}, Model: ${fVal.model}`)
         }
         const id = `${gId}/${fVal.id}`
+        console.log('converted id', id)
         fVal.fId = fVal.id
         fVal.id = id
       })
@@ -103,6 +125,7 @@ const actions = {
     // map value is array of functions needs to be called on field change
     let dependencyMap = {}
     let store = this
+    let schemaNamespaceArr = namespaceToArray(context.state.schemaNamespace)
 
     function processField (field) {
 
@@ -113,8 +136,6 @@ const actions = {
       // if id is not there generate one
       if (field.id === undefined) {
         field.id = slugify(uniqueId(field.model))
-      } else {
-        field.id = slugify(field.id)
       }
 
       // dependsOn and wather must be defined
@@ -130,25 +151,25 @@ const actions = {
             dependencyMap[depId] = []
           }
           // push watcher in map
-          dependencyMap[depId].push(field.watcher.bind(null, context))
+
+          dependencyMap[depId].push(getWrappedFunction(store, field.watcher.bind({}), modelNamespace, schemaNamespace, field.id))
         })
       }
 
       // onChange and onValidate needs to be bound to this.
       if (isFunction(field.onChange)) {
-        field.onChange = field.onChange.bind(null, context)
+        field.onChange = getWrappedFunction(store, field.onChange.bind({}), modelNamespace, schemaNamespace, field.id)
       }
       if (isFunction(field.onValidate)) {
-        field.onValidate = field.onValidate.bind(null, context)
+        field.onValidate = getWrappedFunction(store, field.onValidate.bind({}), modelNamespace, schemaNamespace, field.id)
       }
 
       if (isFunction(field.items)) {
-        field.items = field.items.bind(null, context)
+        field.items = getWrappedFunction(store, field.items.bind({}), modelNamespace, schemaNamespace, field.id)
       }
 
       field._private = {}
-      // defineValueProperty(field._private, store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)
-      field._private._vm = setVmForVal(store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)
+      defineValueProperty(field._private, store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)
       delete field.formatValueToField
       delete field.formatValueToModel
       delete field.watcher
@@ -170,13 +191,17 @@ const actions = {
       })
     })
 
-    let schemaNamespaceArr = namespaceToArray(context.state.schemaNamespace)
     // now inject real notify chain using dependencyMap
     each(schema.fields, (field) => {
       let fid = field.id
       let callChain = dependencyMap[fid]
       if (isArray(callChain)) {
         field.notifier = getNotifyCallFunction(...callChain)
+        let unwatch = registerWatcher(store, field, modelNamespace)
+        context.commit({
+          type: 'addWatcher',
+          watcher: unwatch
+        })
       }
 
       let fNamespace = [...schemaNamespaceArr, (field.id)]
@@ -186,6 +211,7 @@ const actions = {
         // modelNamespace: modelNamespace,
         value: field
       })
+
       context.commit({
         type: 'addField',
         value: fNamespace
@@ -199,6 +225,11 @@ const actions = {
         let callChain = dependencyMap[fid]
         if (isArray(callChain)) {
           fVal.notifier = getNotifyCallFunction(...callChain)
+          let unwatch = registerWatcher(store, fVal, modelNamespace)
+          context.commit({
+            type: 'addWatcher',
+            watcher: unwatch
+          })
         }
 
         let fNamespace = [...schemaNamespaceArr, (fVal.id)]
@@ -216,7 +247,6 @@ const actions = {
         })
       })
     })
-
   },
   dispose (context) {
     each(context.state.fields, (fStore) => {
@@ -230,12 +260,50 @@ const actions = {
     })
 
     context.commit({
+      type: 'clearWatcher'
+    })
+
+    context.commit({
       type: 'clearGroups'
     })
 
     context.commit({
       type: 'clearFields'
     })
+  }
+}
+
+function registerWatcher (store, field, modelNamespace) {
+  let registerFunc = null
+
+  field.registerWatcher = (passFunc) => {
+    registerFunc = passFunc
+  }
+
+  return store.watch(function (state, getters) {
+    let mContext = getModuleByNamespace(store, modelNamespace)
+    let value = objGet(mContext.state, field.model, null)
+    return value
+  }, function (val, oldVal) {
+    if (isFunction(registerFunc)) {
+      registerFunc(val, oldVal)
+    }
+  }, {
+    immediate: true
+  })
+}
+
+function getWrappedFunction (store, funct, modelNamespace, schemaNamespace, fid) {
+  return (...args) => {
+    let modelCtx = getModuleByNamespace(store, modelNamespace)
+    let schemaCtx = getModuleByNamespace(store, schemaNamespace)
+
+    if (schemaNamespace.charAt(schemaNamespace.length - 1) !== '/') {
+      schemaNamespace += '/'
+    }
+
+    let fieldCtx = getModuleByNamespace(store, schemaNamespace + fid)
+    return funct(modelCtx, schemaCtx, fieldCtx, ...args)
   }
 }
 

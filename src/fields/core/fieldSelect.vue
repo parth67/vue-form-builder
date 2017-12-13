@@ -7,7 +7,9 @@
     </option>
     <template v-for="item in items">
       <optgroup v-if="item.group" :label="getGroupName(item)">
-        <option v-if="item.ops" v-for="i in item.ops" :value="getItemValue(i)" :key="getItemValue(i)">{{ getItemName(i) }}</option>
+        <option v-if="item.ops" v-for="i in item.ops" :value="getItemValue(i)" :key="getItemValue(i)">{{ getItemName(i)
+          }}
+        </option>
       </optgroup>
       <option v-if="!item.group" :value="getItemValue(item)">{{ getItemName(item) }}</option>
     </template>
@@ -15,28 +17,46 @@
 </template>
 
 <script>
-  import AbstractFieldMixin from '@/mixin/abstract-field'
+  import AbstractFieldMixin from '../../mixin/abstract-field'
+  import AsyncComputed from '../../mixin/async-computed'
   import { isFunction, isObject, find } from 'lodash'
 
   export default {
     name: 'field-select',
-    mixins: [AbstractFieldMixin],
+    mixins: [AbstractFieldMixin, AsyncComputed],
     computed: {
       fieldOptions () {
         return this.$storeCtx.state.fieldOptions || {}
-      },
-      items () {
-        let values = this.$storeCtx.state.items
-        if (isFunction(values)) {
-          return this.groupValues(values(this.$storeCtx))
-        } else {
-          return this.groupValues(values)
-        }
+      }
+    },
+    asyncComputed: {
+      items: {
+        get: function () {
+          let values = this.$storeCtx.state.items
+          let callVal
+          if (isFunction(values)) {
+            callVal = values()
+            if (!callVal || !callVal.then) {
+              callVal = Promise.resolve(callVal)
+            }
+          } else {
+            callVal = Promise.resolve(values)
+          }
+          callVal.then((val) => {
+          })
+          return new Promise(resolve => {
+            callVal.then(rVals => {
+              resolve(this.groupValues(rVals))
+            })
+          })
+
+        },
+        default: []
       }
     },
     methods: {
 
-      groupValues (values) {
+      groupValues (values = []) {
         let array = []
 
         let valueProp = this.fieldOptions.value || 'value'

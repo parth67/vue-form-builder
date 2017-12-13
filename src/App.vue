@@ -2,7 +2,7 @@
   <div id="app">
     <pre>{{ $store.state.model | pretty }}</pre>
 
-    <VueFormBuilder ></VueFormBuilder>
+    <VueFormBuilder :modelNamespace="'model'" :schemaNamespace="'formSchema'" :schema="schema"></VueFormBuilder>
   </div>
 </template>
 
@@ -14,62 +14,65 @@
     components: {
       'VueFormBuilder': VueFormBuilder
     },
-    provide: {
-      schema: {
-        fields: [{
-          id: 'id1',
-          model: 'a',
-          disabled: false,
-          type: 'input',
-          label: 'Field-1',
-          placeholder: 'Input Field One'
-          // formatValueToField: (value) => {
-          //   if (value) {
-          //     return (value + '').replace(' VAL', '')
-          //   } else {
-          //     return value
-          //   }
-          //
-          // },
-          // formatValueToModel: (value) => {
-          //   return value + ' VAL'
-          // }
-        }],
-        groups: [{
-          id: 'grp1',
-          label: 'LBL1',
-          fields: [{
-            id: 'id1',
-            type: 'input',
-            model: 'b',
-            dependsOn: ['id1'],
-            watcher: function watchid1 () { console.log('notified', arguments) }
-          }, {
-            id: 'id2',
-            model: 'c',
-            items: function (schemaCtx, fieldCtx) {
-              console.log('called', fieldCtx.getters['value'])
-              if (fieldCtx.getters['value'] === 1) {
-                return [{value: 1, label: 'item1', group: 'Grp1'}, 2]
-              } else {
-                return [{value: 1, label: 'item1', group: 'Grp1'}, 2, 3]
-              }
-            },
-            type: 'radio',
-            inputType: 'password',
-            dependsOn: ['id1'],
-            unknown: 'id',
-            watcher: function watchid1 () { console.log('notified', arguments) }
-          }]
-        }]
-
-      },
-      schemaNamespace: 'formSchema',
-      modelNamespace: 'model'
-    },
     filters: {
       pretty: function (value) {
         return JSON.stringify(value, null, 2)
+      }
+    },
+    data () {
+      return {
+        schema: {
+          fields: [{
+            id: 'id1',
+            model: 'a',
+            disabled: false,
+            type: 'input',
+            label: 'Field-1',
+            placeholder: 'Input Field One'
+            // formatValueToField: (value) => {
+            //   if (value) {
+            //     return (value + '').replace(' VAL', '')
+            //   } else {
+            //     return value
+            //   }
+            //
+            // },
+            // formatValueToModel: (value) => {
+            //   return value + ' VAL'
+            // }
+          }],
+          groups: [{
+            id: 'grp1',
+            label: 'LBL1',
+            fields: [{
+              id: 'id1',
+              type: 'input',
+              model: 'b',
+              dependsOn: ['grp1/id2'],
+              watcher: function watchid1 () { console.log('notified grp1-id1', arguments) }
+            }, {
+              id: 'id2',
+              model: 'c',
+              items: function (modelCtx, schemaCtx, fieldCtx) {
+                console.log('called', fieldCtx.getters['value'])
+                let retVal
+                if (fieldCtx.getters['value'] === 1) {
+                  retVal = [{value: 1, label: 'item1', group: 'Grp1'}, 2]
+                } else {
+                  retVal = [{value: 1, label: 'item1', group: 'Grp1'}, 2, 3]
+                }
+                retVal = [{value: 1, label: 'item1', group: 'Grp1'}, 2, 3]
+                return retVal
+              },
+              type: 'check-list',
+              inputType: 'password',
+              dependsOn: ['id1'],
+              unknown: 'id',
+              watcher: function watchid1 () { console.log('notified grp1-id2', arguments) }
+            }]
+          }]
+
+        }
       }
     }
   }

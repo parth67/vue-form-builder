@@ -1,3 +1,2 @@
-import VueFormBuilder from './VueFormBuilder'
-export SchemaModule from './store/schema-store'
-export default VueFormBuilder
+import component from './VueFormBuilder'
+export default component
