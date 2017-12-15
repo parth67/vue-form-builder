@@ -8,7 +8,7 @@
 
 <script>
   import VueFormBuilder from './VueFormBuilder'
-
+  import validator from './validator'
   export default {
     name: 'app',
     components: {
@@ -28,7 +28,8 @@
             disabled: false,
             type: 'input',
             label: 'Field-1',
-            placeholder: 'Input Field One'
+            placeholder: 'Input Field One',
+            validator: [validator.required.locale({fieldIsRequired: 'Invalid Customer Name'})]
             // formatValueToField: (value) => {
             //   if (value) {
             //     return (value + '').replace(' VAL', '')

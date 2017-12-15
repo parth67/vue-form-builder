@@ -1,5 +1,5 @@
 <template>
-  <div class="radio-list wrapper">
+  <div :class="$storeCtx.state.fieldClasses" class="radio-list wrapper">
     <div class="radio" v-for="(item, index) in items" :key="index">
       <label>
         <input type="radio" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
@@ -19,9 +19,7 @@
     mixins: [AbstractFieldMixin, AsyncComputed],
 
     computed: {
-      fieldOptions () {
-        return this.$storeCtx.state.fieldOptions || {}
-      }
+
     },
     asyncComputed: {
       items () {
@@ -59,7 +57,5 @@
 </script>
 
 <style>
-.wrapper {
-  display: block;
-}
+
 </style>

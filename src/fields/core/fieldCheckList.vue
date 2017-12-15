@@ -23,9 +23,6 @@
       }
     },
     computed: {
-      fieldOptions () {
-        return this.$storeCtx.state.fieldOptions || {}
-      }
     },
     asyncComputed: {
       items () {

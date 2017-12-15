@@ -129,11 +129,26 @@ export function slugify (name = '') {
 current impl is call one by one waiting for each finish (sequential process).
 if required change this to no-wait function
  */
-export function getNotifyCallFunction (...args) {
+export function getCallChainFunction (...args) {
   return async function (...passArgs) {
     for (let i = 0; i < args.length; i++) {
       await args[i](...passArgs)
     }
+  }
+}
+
+export function getCallChainFunctionForkJoin (...args) {
+  return async function (...passArgs) {
+    let waitArr = []
+    let results = []
+    for (let i = 0; i < args.length; i++) {
+      waitArr.push(args[i](...passArgs))
+    }
+
+    for (let i = 0; i < waitArr.length; i++) {
+      results.push(await waitArr[i])
+    }
+    return results
   }
 }
 

@@ -1,2 +1,10 @@
 import component from './VueFormBuilder'
-export default component
+import abstractField from './mixin/abstract-field'
+import validators from './validator'
+
+export default {
+  component: component,
+  abstractField: abstractField,
+  validators: validators
+}
+

@@ -1,4 +1,4 @@
-import { keys, each, isObject, has, isFunction, isArray, flattenDepth } from 'lodash'
+import { keys, each, isObject, has, isFunction, flattenDepth, filter, isNil, negate } from 'lodash'
 import Vue from 'vue'
 // import { defineValueProperty } from './helper'
 
@@ -18,6 +18,7 @@ const state = function () {
     visible: true,
     disabled: false,
     styleClasses: [],
+    rowClasses: '',
     fieldClasses: '',
     errors: [],
 
@@ -79,12 +80,6 @@ const actions = {
   // Asynchronous mutations commits to modify field-store
   init (context, payload) {
     let {value: fieldDef} = payload
-
-    // validator must be array of function.
-    if (isFunction(fieldDef.validator)) {
-      // redefine as array of function
-      fieldDef.validator = [fieldDef.validator]
-    }
 
     // define private space to save value
     // fieldDef._private = {}
@@ -156,27 +151,25 @@ const actions = {
     }
   },
   validate (context) {
-    let validatorArray = state.validator
-    if (isArray(validatorArray)) {
+    let validator = context.state.validator
+    if (isFunction(validator)) {
       // its a validator chain. call each function with value
       // call each validator in chain
       let currVal = context.getters.value
-      let validatorResult = []
-      each(validatorArray, (validatorFunc) => {
-        let result = validatorFunc.call(context, currVal)
-        validatorResult.push(result)
-      })
+      let validatorResultPromise = validator(currVal)
 
-      let flattenErrors = flattenDepth(validatorResult, 3)
-      context.commit({
-        type: 'setErrors',
-        value: flattenErrors
-      })
+      validatorResultPromise.then(function (result) {
+        let flattenErrors = filter(flattenDepth(result, 3), negate(isNil))
+        context.commit({
+          type: 'setErrors',
+          value: flattenErrors
+        })
 
-      // call onchange
-      if (isFunction(context.state.onValidate)) {
-        context.state.onValidate(flattenErrors)
-      }
+        // call onchange
+        if (isFunction(context.state.onValidate)) {
+          context.state.onValidate(flattenErrors)
+        }
+      })
     }
 
     // return context.dispatch({

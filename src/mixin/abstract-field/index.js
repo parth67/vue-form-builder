@@ -11,6 +11,9 @@ export default {
   },
   methods: {},
   computed: {
+    fieldOptions () {
+      return this.$storeCtx.state.fieldOptions || {}
+    },
     disabled () {
       let context = this.$storeCtx
       return context.state.disabled

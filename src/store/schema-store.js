@@ -1,6 +1,7 @@
-import { each, isArray, isFunction, isObject, isString, uniqueId, get as objGet } from 'lodash'
+import { each, isArray, isFunction, isObject, isString, uniqueId, get as objGet, cloneDeep } from 'lodash'
 import {
-  getNotifyCallFunction,
+  getCallChainFunction,
+  getCallChainFunctionForkJoin,
   namespaceToArray,
   defineValueProperty,
   slugify,
@@ -127,8 +128,8 @@ const actions = {
     let store = this
     let schemaNamespaceArr = namespaceToArray(context.state.schemaNamespace)
 
-    function processField (field) {
-
+    function processField (passField) {
+      let field = cloneDeep(passField)
       if (isString(field.styleClasses)) {
         field.styleClasses = [field.styleClasses]
       }
@@ -168,16 +169,32 @@ const actions = {
         field.items = getWrappedFunction(store, field.items.bind({}), modelNamespace, schemaNamespace, field.id)
       }
 
+      if (isFunction(field.validator)) {
+        field.validator = [field.validator]
+      }
+
+      if (isArray(field.validator)) {
+        let validatorArr = []
+        each(field.validator, (validator) => {
+          validatorArr.push(getWrappedFunction(store, validator.bind({}), modelNamespace, schemaNamespace, field.id))
+        })
+        field.validator = getCallChainFunctionForkJoin(...validatorArr)
+      }
+
       field._private = {}
       defineValueProperty(field._private, store, modelNamespace, field.model, field.formatValueToField, field.formatValueToModel)
       delete field.formatValueToField
       delete field.formatValueToModel
       delete field.watcher
       // delete field.dependsOn
+      return field
     }
 
+    let fields = []
+    let groups = []
+
     each(schema.fields, (field) => {
-      processField(field)
+      fields.push(processField(field))
     })
 
     each(schema.groups, (gVal) => {
@@ -186,17 +203,20 @@ const actions = {
         groupId: gVal.id,
         label: gVal.label
       })
+      let lgroup = {}
+      lgroup.id = gVal.id
+      lgroup.fields = []
       each(gVal.fields, (fVal) => {
-        processField(fVal)
+        lgroup.fields.push(processField(fVal))
       })
+      groups.push(lgroup)
     })
-
     // now inject real notify chain using dependencyMap
-    each(schema.fields, (field) => {
+    each(fields, (field) => {
       let fid = field.id
       let callChain = dependencyMap[fid]
       if (isArray(callChain)) {
-        field.notifier = getNotifyCallFunction(...callChain)
+        field.notifier = getCallChainFunction(...callChain)
         let unwatch = registerWatcher(store, field, modelNamespace)
         context.commit({
           type: 'addWatcher',
@@ -218,13 +238,13 @@ const actions = {
       })
     })
 
-    each(schema.groups, (gVal) => {
+    each(groups, (gVal) => {
       let gId = gVal.id
       each(gVal.fields, (fVal) => {
         let fid = fVal.id
         let callChain = dependencyMap[fid]
         if (isArray(callChain)) {
-          fVal.notifier = getNotifyCallFunction(...callChain)
+          fVal.notifier = getCallChainFunction(...callChain)
           let unwatch = registerWatcher(store, fVal, modelNamespace)
           context.commit({
             type: 'addWatcher',

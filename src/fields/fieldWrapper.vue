@@ -1,27 +1,28 @@
 <template>
-  <div class="form-group" v-if="isVisible" :class="rowClasses">
-    <label v-if="isLabelApplicable == true" :for="$storeCtx.state.id">
-      {{ $storeCtx.state.label }}
-      <span class="help" v-if="$storeCtx.state.help">
+  <div :class="rowClasses">
+    <div v-if="isVisible" :class="styleClasses">
+      <label v-if="isLabelApplicable == true" :for="$storeCtx.state.id">
+        {{ $storeCtx.state.label }}
+        <span class="help" v-if="$storeCtx.state.help">
         <i class="icon"></i>
         <div class="helpText" v-html="$storeCtx.state.help"></div>
       </span>
-    </label>
-    <div class="field-wrap">
-      <component :is="fieldType" :storeNamespace="storeNamespace"></component>
-      <!-- button feature is not required -->
-      <!--div class="buttons" v-if="buttonVisibility(field)">
-        <button v-for="btn in field.buttons" @click="buttonClickHandler(btn, field, $event)" :class="btn.classes">
-          {{ btn.label }}
-        </button>
-      </div-->
-    </div>
-    <div class="hint" v-if="$storeCtx.state.hint">{{ fieldHint }}</div>
-    <div class="errors help-block" v-if="fieldHasErrors == true">
-      <span v-for="(error, index) in errors" :key="index">{{ error }}</span>
+      </label>
+      <div class="field-wrap">
+        <component :is="fieldType" :storeNamespace="storeNamespace"></component>
+        <!-- button feature is not required -->
+        <!--div class="buttons" v-if="buttonVisibility(field)">
+          <button v-for="btn in field.buttons" @click="buttonClickHandler(btn, field, $event)" :class="btn.classes">
+            {{ btn.label }}
+          </button>
+        </div-->
+      </div>
+      <div class="hint" v-if="$storeCtx.state.hint">{{ fieldHint }}</div>
+      <div class="errors help-block" v-if="fieldHasErrors == true">
+        <span v-for="(error, index) in errors" :key="index">{{ error }}</span>
+      </div>
     </div>
   </div>
-
   <!--div class="field-wrap">
     <component :is="getFieldType(field)" v-bind:storeNamespace="field.join('/')"></component>
   </div-->
@@ -29,7 +30,7 @@
 
 <script>
   import StoreNamespaceMixin from '../mixin/store-namespace'
-  import { isArray, each, isFunction } from 'lodash'
+  import { isArray, each, isFunction, isString, isObject, extend } from 'lodash'
 
   // start collecting all fields component
   let fieldComponents = {}
@@ -41,12 +42,26 @@
   })
   // all components are collected in fieldComponents
 
-
   export default {
     name: 'field-wrapper',
     components: fieldComponents,
     mixins: [StoreNamespaceMixin],
     inject: {},
+    methods: {
+      processStyle (styleAttr) {
+        let retVal = {}
+        if (isString(styleAttr)) {
+          retVal[styleAttr] = true
+        } else if (isArray(styleAttr)) {
+          each(styleAttr, (c) => {
+            retVal[c] = true
+          })
+        } else if (isObject(styleAttr)) {
+          retVal = {...retVal, ...styleAttr}
+        }
+        return retVal
+      }
+    },
     computed: {
       isVisible () {
         return this.$storeCtx.state.visible
@@ -59,8 +74,13 @@
       },
       rowClasses () {
         let state = this.$storeCtx.state
+        return this.processStyle(state.rowClasses)
+      },
+      styleClasses () {
+        let state = this.$storeCtx.state
         const hasErrors = this.fieldHasErrors
         let baseClasses = {
+          field: true,
           error: hasErrors,
           disabled: state.disabled,
           readonly: state.readonly,
@@ -71,20 +91,17 @@
         // if (validationErrorClass && validationSuccessClass) {
         if (hasErrors) {
           // baseClasses[validationErrorClass] = true
-          baseClasses.error = false
+          baseClasses['has-error'] = true
         } else {
+          baseClasses['has-error'] = false
           // baseClasses[validationSuccessClass] = true
         }
         // }
 
-        if (isArray(state.styleClasses)) {
-          each(state.styleClasses, (c) => {
-            baseClasses[c] = true
-          })
-        }
+        baseClasses['form-group'] = true
+        extend(baseClasses, this.processStyle(state.styleClasses))
 
         baseClasses['field-' + state.type] = true
-
         return baseClasses
       },
       isLabelApplicable () {

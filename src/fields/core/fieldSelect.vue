@@ -25,9 +25,6 @@
     name: 'field-select',
     mixins: [AbstractFieldMixin, AsyncComputed],
     computed: {
-      fieldOptions () {
-        return this.$storeCtx.state.fieldOptions || {}
-      }
     },
     asyncComputed: {
       items: {
