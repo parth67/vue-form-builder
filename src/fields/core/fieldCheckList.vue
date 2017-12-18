@@ -1,8 +1,8 @@
 <template>
-  <div class="check-list wrapper" :class="$storeCtx.state.fieldClasses">
-    <div v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
-      <label>
-        <input type="checkbox" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
+  <div class="check-list wrapper">
+    <div :class="$storeCtx.state.fieldClasses" v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
+      <input type="checkbox" :id="uid + '-' + index" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
+      <label :for="uid + '-' + index">
         {{getLabel(item)}}
       </label>
     </div>
@@ -12,7 +12,7 @@
 <script>
   import AbstractFieldMixin from '../../mixin/abstract-field'
   import AsyncComputed from '../../mixin/async-computed'
-  import { isObject, isArray, isFunction } from 'lodash'
+  import { isObject, isArray, isFunction, uniqueId } from 'lodash'
 
   export default {
     name: 'field-check-list',
@@ -23,6 +23,9 @@
       }
     },
     computed: {
+      uid () {
+        return uniqueId('check-list')
+      }
     },
     asyncComputed: {
       items () {
@@ -32,6 +35,9 @@
         } else {
           return values
         }
+      },
+      uid() {
+
       }
     },
     methods: {

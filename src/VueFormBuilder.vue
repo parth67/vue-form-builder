@@ -3,19 +3,27 @@
   <div class="vue-form-generator" v-if="schema != null">
     <fieldset v-if="fields.length > 0" :is="tag">
       <template v-for="field in fields">
-        <field-wrapper :storeNamespace="field.join('/')"></field-wrapper>
+        <field-wrapper :storeNamespace="field">
+        </field-wrapper>
       </template>
     </fieldset>
 
     <template v-for="(group, id) in groups" v-if="isGroupVisible(id)">
-      <fieldset :is="groupTag">
-        <slot v-if="groupsLabel[id]" v-bind:legend="groupsLabel[id]">
-          <legend>{{ groupsLabel[id] }}</legend>
-        </slot>
-        <template v-for="field in group">
-          <field-wrapper :storeNamespace="field.join('/')"></field-wrapper>
-        </template>
-      </fieldset>
+      <!-- bind slot to group name -->
+      <slot :name="groupId"
+            :groupId="groupId"
+            :groupFields="groupFields"
+            :groupLabel="groupsLabel[groupId]">
+        <!-- default content if slot is not provided -->
+        <fieldset :is="groupTag">
+          <slot v-if="groupsLabel[id]" v-bind:legend="groupsLabel[id]">
+            <legend>{{ groupsLabel[id] }}</legend>
+          </slot>
+          <template v-for="field in group">
+            <field-wrapper :storeNamespace="field"></field-wrapper>
+          </template>
+        </fieldset>
+      </slot>
     </template>
 
   </div>
@@ -24,26 +32,20 @@
 
 <script>
   import FieldWrapper from './fields/fieldWrapper'
-  import { findIndex } from 'lodash'
+  import { findIndex, map, each } from 'lodash'
   import ScheamStore from './store/schema-store'
   // import StoreNamespaceMixIn from './mixin/store-namespace'
   import {
     namespaceToArray,
     getNamespacedDispatch,
-    getNamespacedState,
-    arrayToNamespace
+    getNamespacedState
   } from './helper'
 
   export default {
     components: {
       FieldWrapper: FieldWrapper
     },
-    name: 'VueFormBuilder',
-    data () {
-      return {
-        storeNamespace: this.schemaNamespace
-      }
-    },
+    name: 'vue-form-builder',
     props: {
       schemaNamespace: {
         type: String,
@@ -58,17 +60,17 @@
         required: true,
         default: {}
       },
-      options: {
-        type: Object,
-        default () {
-          return {
-            validateAfterLoad: false,
-            validateAfterChanged: false,
-            validationErrorClass: 'error',
-            validationSuccessClass: ''
-          }
-        }
-      },
+      // options: {
+      //   type: Object,
+      //   default () {
+      //     return {
+      //       validateAfterLoad: false,
+      //       validateAfterChanged: false,
+      //       validationErrorClass: 'error',
+      //       validationSuccessClass: ''
+      //     }
+      //   }
+      // },
       tag: {
         type: String,
         default: 'fieldset',
@@ -114,11 +116,6 @@
           modelNamespace
         })
       },
-      getFieldType: function (field) {
-        let namespace = arrayToNamespace(field)
-        let state = getNamespacedState(namespace, this.$store)
-        return 'field-' + state.type
-      },
       isGroupVisible: function (id) {
         if (findIndex(this.hideGroup, id) === -1) {
           return true
@@ -130,11 +127,17 @@
     computed: {
       fields: function () {
         let state = getNamespacedState(this.schemaNamespace, this.$store)
-        return state.fields
+        return map(state.fields, (f) => f.join('/'))
       },
       groups: function () {
+        let retVal = {}
         let state = getNamespacedState(this.schemaNamespace, this.$store)
-        return state.groups
+        each(state.groups, (group, gid) => {
+          if (retVal[gid] === undefined) {
+            retVal[gid] = map(group, (f) => f.join('/'))
+          }
+        })
+        return retVal
       },
       groupsLabel: function () {
         let state = getNamespacedState(this.schemaNamespace, this.$store)

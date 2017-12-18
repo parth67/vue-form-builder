@@ -2,17 +2,24 @@
   <div id="app">
     <pre>{{ $store.state.model | pretty }}</pre>
 
-    <VueFormBuilder :modelNamespace="'model'" :schemaNamespace="'formSchema'" :schema="schema"></VueFormBuilder>
+    <VueFormBuilder :modelNamespace="'model'" :schemaNamespace="'formSchema'" :schema="schema">
+      <template slot-scope="props">
+        <field-wrapper :storeNamespace="props.getFieldSchema('id1')"></field-wrapper>
+      </template>
+    </VueFormBuilder>
   </div>
 </template>
 
 <script>
-  import VueFormBuilder from './VueFormBuilder'
+  // import VueFormBuilder from './VueFormBuilder'
+  import VueFormBuilder from './VueFormBuilderSlotted'
+  import fieldWrapper from './fields/fieldWrapper'
   import validator from './validator'
   export default {
     name: 'app',
     components: {
-      'VueFormBuilder': VueFormBuilder
+      'VueFormBuilder': VueFormBuilder,
+      'fieldWrapper': fieldWrapper
     },
     filters: {
       pretty: function (value) {

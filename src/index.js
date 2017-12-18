@@ -1,10 +1,14 @@
 import component from './VueFormBuilder'
-import abstractField from './mixin/abstract-field'
-import validators from './validator'
+import fieldWrapper from './fields/fieldWrapper'
+export { default as VueFormBuilderSlotted } from './VueFormBuilderSlotted'
+export { default as fieldWrapper } from './fields/fieldWrapper'
+export { default as abstractField } from './mixin/abstract-field'
+export { default as validators } from './validator'
 
-export default {
-  component: component,
-  abstractField: abstractField,
-  validators: validators
+const VueFormBuilder = component
+
+export default VueFormBuilder
+
+export function addField (name, def) {
+  fieldWrapper.components['field-' + name] = def
 }
-

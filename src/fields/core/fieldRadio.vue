@@ -1,8 +1,8 @@
 <template>
-  <div :class="$storeCtx.state.fieldClasses" class="radio-list wrapper">
-    <div class="radio" v-for="(item, index) in items" :key="index">
-      <label>
-        <input type="radio" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
+  <div class="radio-list wrapper">
+    <div :class="$storeCtx.state.fieldClasses" v-for="(item, index) in items" :key="index">
+      <input type="radio" :id="uid + '-' + index" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
+      <label :for="uid + '-' + index">
         {{getLabel(item)}}
       </label>
     </div>
@@ -12,14 +12,16 @@
 <script>
   import AbstractFieldMixin from '../../mixin/abstract-field'
   import AsyncComputed from '../../mixin/async-computed'
-  import { isObject, isFunction } from 'lodash'
+  import { isObject, isFunction, uniqueId } from 'lodash'
 
   export default {
     name: 'field-radio',
     mixins: [AbstractFieldMixin, AsyncComputed],
 
     computed: {
-
+      uid () {
+        return uniqueId('radio-list')
+      }
     },
     asyncComputed: {
       items () {

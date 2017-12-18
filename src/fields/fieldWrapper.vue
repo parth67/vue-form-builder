@@ -1,5 +1,5 @@
 <template>
-  <div :class="rowClasses">
+  <div v-if="storeNamespace" :class="rowClasses">
     <div v-if="isVisible" :class="styleClasses">
       <label v-if="isLabelApplicable == true" :for="$storeCtx.state.id">
         {{ $storeCtx.state.label }}
@@ -22,6 +22,7 @@
         <span v-for="(error, index) in errors" :key="index">{{ error }}</span>
       </div>
     </div>
+    <slot></slot>
   </div>
   <!--div class="field-wrap">
     <component :is="getFieldType(field)" v-bind:storeNamespace="field.join('/')"></component>
@@ -40,7 +41,6 @@
     let compName = key.replace(/^\.\//, '').replace(/\.vue/, '')
     fieldComponents[compName] = coreFields(key).default
   })
-  // all components are collected in fieldComponents
 
   export default {
     name: 'field-wrapper',

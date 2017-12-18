@@ -30,8 +30,8 @@ const webpackConfig = merge(baseWebpackConfig, {
     path: config.build.assetsRoot,
     filename: utils.assetsPath('[name].min.js'),
     library: 'VueFormBuilder',
-    libraryTarget: 'umd',
-    libraryExport: 'default'
+    libraryTarget: 'commonjs2',
+    // libraryExport: 'commonjs2'
   },
   externals: {
     lodash: {

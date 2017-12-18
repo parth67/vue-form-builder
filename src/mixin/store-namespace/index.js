@@ -4,7 +4,7 @@ export default {
   props: {
     storeNamespace: {
       type: String,
-      required: true
+      required: false
     }
   },
   beforeMount: injectStoreCtx
