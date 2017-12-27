@@ -126,7 +126,6 @@ const actions = {
           console.error(`Filed without id Label: ${fVal.label}, Model: ${fVal.model}`)
         }
         const id = `${gId}/${fVal.id}`
-        console.log('converted id', id)
         fVal.fId = fVal.id
         fVal.id = id
       })
@@ -360,7 +359,7 @@ function getWrappedFunction (store, funct, debounceSec, modelNamespace, schemaNa
     }
 
     let fieldCtx = getModuleByNamespace(store, schemaNamespace + fid)
-    return funct(schemaCtx, fieldCtx, ...args, modelCtx)
+    return funct(modelCtx, schemaCtx, fieldCtx, ...args)
   }
 
   if (isNumber(debounceSec) && debounceSec !== 0) {
