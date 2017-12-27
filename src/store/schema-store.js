@@ -26,6 +26,7 @@ const state = function () {
   return {
     modelNamespace: '',
     schemaNamespace: '',
+    validateOnLoad: false,
     fields: [],
     groups: {},
     groupsLabel: {},
@@ -41,6 +42,9 @@ const mutations = {
   },
   setModelNamespace (state, payload) {
     state.modelNamespace = payload.value
+  },
+  setValidateOnLoad (state, payload) {
+    state.validateOnLoad = payload.value
   },
   addField (state, payload) {
     state.fields.push(payload.value)
@@ -85,6 +89,8 @@ const actions = {
     let schema = payload.value
     let {schemaNamespace, modelNamespace} = payload
 
+    let {validateOnLoad = false} = schema
+
     each(context.state.fields, (fStore) => {
       this.unregisterModule(fStore)
     })
@@ -111,6 +117,11 @@ const actions = {
     context.commit({
       type: 'setModelNamespace',
       value: modelNamespace
+    })
+
+    context.commit({
+      type: 'setValidateOnLoad',
+      value: validateOnLoad
     })
 
     // let modelContext = getModuleByNamespace(this, modelNamespace)
@@ -233,12 +244,13 @@ const actions = {
       let callChain = dependencyMap[fid]
       if (isArray(callChain)) {
         field.notifier = getCallChainFunction(...callChain)
-        let unwatch = registerNotifyWatcher(store, field, modelNamespace)
-        context.commit({
-          type: 'addWatcher',
-          watcher: unwatch
-        })
       }
+
+      let unwatch = registerNotifyWatcher(store, field, modelNamespace)
+      context.commit({
+        type: 'addWatcher',
+        watcher: unwatch
+      })
 
       let fNamespace = [...schemaNamespaceArr, (field.id)]
       this.registerModule(fNamespace, fieldStore)
@@ -261,14 +273,15 @@ const actions = {
         let callChain = dependencyMap[fid]
         if (isArray(callChain)) {
           fVal.notifier = getCallChainFunction(...callChain)
-          let unwatch = registerNotifyWatcher(store, fVal, modelNamespace)
-          unwatch.then((val) => {
-            context.commit({
-              type: 'addWatcher',
-              watcher: val
-            })
-          })
         }
+
+        let unwatch = registerNotifyWatcher(store, fVal, modelNamespace)
+        unwatch.then((val) => {
+          context.commit({
+            type: 'addWatcher',
+            watcher: val
+          })
+        })
 
         let fNamespace = [...schemaNamespaceArr, (fVal.id)]
         this.registerModule(fNamespace, fieldStore)
@@ -293,14 +306,16 @@ const actions = {
   setUpWatcher (context) {
     each(context.state.fields, (fStore) => {
       context.dispatch({
-        type: fStore[fStore.length - 1] + '/setUpWatcher'
+        type: fStore[fStore.length - 1] + '/setUpWatcher',
+        validateOnLoad: context.state.validateOnLoad
       })
     })
 
     each(context.state.groups, (gVal) => {
       each(gVal, (gfStore) => {
         context.dispatch({
-          type: gfStore[gfStore.length - 1] + '/setUpWatcher'
+          type: gfStore[gfStore.length - 1] + '/setUpWatcher',
+          validateOnLoad: context.state.validateOnLoad
         })
       })
     })

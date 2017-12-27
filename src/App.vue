@@ -28,6 +28,7 @@
     data () {
       return {
         schema: {
+          validateOnLoad: true,
           fields: [{
             id: 'id1',
             model: 'a',
@@ -70,9 +71,23 @@
               type: 'input-dropdown',
               inputType: 'text',
               dependsOn: ['id1'],
-              watcher () { console.log(arguments, 'watcher') },
+              watcher (modelCtx, storeCtx, fieldCtx) {
+                console.log('watcher')
+              },
               buttons: [{
-                onClick: function () { console.log(arguments) },
+                onClick: function (modelCtx, storeCtx, fieldCtx) {
+                  this.hide = !this.hide
+                  console.log(this.hide, 'hide')
+                  if (this.hide) {
+                    storeCtx.dispatch({
+                      type: 'id1/hide'
+                    })
+                  } else {
+                    storeCtx.dispatch({
+                      type: 'id1/show'
+                    })
+                  }
+                },
                 classes: 'btn-default',
                 html: '<span class="glyphicon glyphicon-search" aria-hidden="true"></span>'
               }]

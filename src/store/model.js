@@ -1,7 +1,7 @@
 import Vue from 'vue'
 
 const state = {
-  a: 123,
+  a: '',
   b: 23,
   c: []
 }

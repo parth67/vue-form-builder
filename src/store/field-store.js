@@ -38,7 +38,7 @@ const state = function () {
       // schemaNamespace: '',
       savedValue: null,
       // this is not used for now. but we might require to enable disable validation
-      validationRequired: true
+      validationRequired: false
     }
     // default: 'val', // if attribute is added.
     // value: null,
@@ -94,13 +94,40 @@ const actions = {
   },
   setUpWatcher (context, payload) {
     let registerWatcher = context.state.registerWatcher
+    let {validateOnLoad} = payload
+
+    if (validateOnLoad === true) {
+      context.commit({
+        type: 'enableValidation'
+      })
+    }
+
     if (isFunction(registerWatcher)) {
+
       registerWatcher((newVal, oldVal) => {
+        // call onchange
+        context.dispatch({
+          type: 'triggerOnchange',
+          newVal,
+          oldVal
+        })
+
+        // call validate
+        context.dispatch({
+          type: 'validate'
+        })
+
         context.dispatch({
           type: 'notify',
           newVal: newVal,
           oldVal: oldVal
         })
+      })
+    }
+
+    if (validateOnLoad === false) {
+      context.commit({
+        type: 'enableValidation'
       })
     }
 
@@ -118,9 +145,11 @@ const actions = {
       commit({
         type: 'hide'
       })
-      return dispatch({
-        type: 'validate'
-      })
+
+      // // TODO this may not be required in view of wathcer.
+      // return dispatch({
+      //   type: 'validate'
+      // })
     }
   },
   show ({commit, dispatch, state}, payload) {
@@ -131,14 +160,22 @@ const actions = {
       commit({
         type: 'show'
       })
-      return dispatch({
-        type: 'validate'
-      })
+
+      // // TODO this may not be required in view of wathcer.
+      // return dispatch({
+      //   type: 'validate'
+      // })
     }
   },
   validate (context) {
     let validator = context.state.validator
-    if (isFunction(validator)) {
+
+    context.commit({
+      type: 'setErrors',
+      value: []
+    })
+
+    if (context.getters.privateData.validationRequired && isFunction(validator)) {
       // its a validator chain. call each function with value
       // call each validator in chain
       let currVal = context.getters.value
@@ -199,20 +236,20 @@ const actions = {
     })
 
     // get new value with formatter applied
-    const newVal = context.getters.value
+    // const newVal = context.getters.value
 
-    // call onchange
-    context.dispatch({
-      type: 'triggerOnchange',
-      newVal,
-      oldVal
-    })
-
-    // TODO should we move to watcher. we will need watcher for all
-    // call validate
-    return context.dispatch({
-      type: 'validate'
-    })
+    // // call onchange
+    // context.dispatch({
+    //   type: 'triggerOnchange',
+    //   newVal,
+    //   oldVal
+    // })
+    //
+    // // TODO should we move to watcher. we will need watcher for all
+    // // call validate
+    // return context.dispatch({
+    //   type: 'validate'
+    // })
   },
   btnClick (context, payload) {
     let index = payload.index
@@ -256,11 +293,11 @@ const mutations = {
     state.disabled = false
   },
   setStyleClasses (state, payload) {
-    const {value = []} = payload
+    const {value = ''} = payload
     state.styleClasses = value
   },
   setErrors (state, payload) {
-    const {value = ''} = payload
+    const {value = []} = payload
     state.errors = value
   },
   clearErrors (state) {
@@ -272,17 +309,25 @@ const mutations = {
   },
   // private
   setValue (state, payload) {
-    const {value = ''} = payload
+    const {value = []} = payload
     state._private.value = value
   },
   // set saved val
   preserveValue (state) {
+    state._private.validationRequired = false
     state._private.savedValue = state._private.value
     state._private.value = null
   },
   restoreValue (state) {
+    state._private.validationRequired = true
     state._private.value = state._private.savedValue
     state._private.savedValue = null
+  },
+  enableValidation (state) {
+    state._private.validationRequired = true
+  },
+  disableValidation (state) {
+    state._private.validationRequired = false
   }
 }
 
