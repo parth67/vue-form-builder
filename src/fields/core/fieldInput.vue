@@ -5,7 +5,7 @@
          :disabled="disabled"
          :id="$storeCtx.state.id"
          :type="$storeCtx.state.inputType"
-         :class="$storeCtx.state.fieldClasses"
+         :class="inputClasses"
          :accept="$storeCtx.state.accept"
          :alt="$storeCtx.state.alt"
          :autocomplete="$storeCtx.state.autocomplete"

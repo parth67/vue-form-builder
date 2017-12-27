@@ -1,6 +1,6 @@
 <template>
   <div class="check-list wrapper">
-    <div :class="$storeCtx.state.fieldClasses" v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
+    <div :class="inputClasses" v-if="value instanceof Array" v-for="(item, index) in items" :key="index">
       <input type="checkbox" :id="uid + '-' + index" :value="getValue(item)" :disabled="isDisabled(item)" v-model="value">
       <label :for="uid + '-' + index">
         {{getLabel(item)}}
@@ -30,14 +30,16 @@
     asyncComputed: {
       items () {
         let values = this.$storeCtx.state.items
+        let callVal
         if (isFunction(values)) {
-          return values(this.$storeCtx)
+          callVal = values(this.$storeCtx)
+          if (!callVal || !callVal.then) {
+            callVal = Promise.resolve(callVal)
+          }
         } else {
-          return values
+          callVal = Promise.resolve(values)
         }
-      },
-      uid() {
-
+        return callVal
       }
     },
     methods: {

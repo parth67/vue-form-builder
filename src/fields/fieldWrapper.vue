@@ -1,21 +1,34 @@
 <template>
   <div v-if="storeNamespace" :class="rowClasses">
-    <div v-if="isVisible" :class="styleClasses">
+    <div v-if="isVisible" :class="fieldClasses">
       <label v-if="isLabelApplicable == true" :for="$storeCtx.state.id">
         {{ $storeCtx.state.label }}
-        <span class="help" v-if="$storeCtx.state.help">
-        <i class="icon"></i>
-        <div class="helpText" v-html="$storeCtx.state.help"></div>
-      </span>
       </label>
-      <div class="field-wrap">
+
+      <!--tooltip for help -->
+      <template v-if="$storeCtx.state.tooltip">
+        <i class="icon" data-toggle="tooltip" :data-placement="$storeCtx.state.tooltipPlacement || 'auto'"
+           :class="tooltipClasses" :title="$storeCtx.state.tooltip"></i>
+      </template>
+
+      <template v-if="$storeCtx.state.help">
+        <span class="help" :class="helpClasses">
+          <i class="icon"></i>
+          <div class="helpText" v-html="$storeCtx.state.help"></div>
+        </span>
+      </template>
+
+      <div class="field-wrap" :class="inputGroupClasses">
         <component :is="fieldType" :storeNamespace="storeNamespace"></component>
+
         <!-- button feature is not required -->
-        <!--div class="buttons" v-if="buttonVisibility(field)">
-          <button v-for="btn in field.buttons" @click="buttonClickHandler(btn, field, $event)" :class="btn.classes">
-            {{ btn.label }}
+        <span v-if="isButtonsAvailable" class="input-group-btn" :class="buttonGroupClasses">
+          <button v-for="(value, index) in $storeCtx.state.buttons" :key="index" @click="buttonClick(index)"
+                  class="btn btn-block" :class="getButtonClasses(value.classes)" v-html="value.html">
+
           </button>
-        </div-->
+        </span>
+
       </div>
       <div class="hint" v-if="$storeCtx.state.hint">{{ fieldHint }}</div>
       <div class="errors help-block" v-if="fieldHasErrors == true">
@@ -42,11 +55,27 @@
     fieldComponents[compName] = coreFields(key).default
   })
 
+  let specialFields = require.context('./special', false, /^\.\/field([\w-_]+)\.vue$/)
+  each(specialFields.keys(), (key) => {
+    let compName = key.replace(/^\.\//, '').replace(/\.vue/, '')
+    fieldComponents[compName] = specialFields(key).default
+  })
+
   export default {
     name: 'field-wrapper',
     components: fieldComponents,
     mixins: [StoreNamespaceMixin],
     inject: {},
+    mounted () {
+      /* eslint-disable no-undef */
+      if (this.$storeCtx.state.tooltip && $ && $.fn.tooltip) {
+        this.$nextTick(() => {
+          // add feature to call bootstrap tooltip for field
+          $(this.$el).find('[data-toggle="tooltip"]').tooltip()
+        })
+      }
+      /* eslint-enable no-undef */
+    },
     methods: {
       processStyle (styleAttr) {
         let retVal = {}
@@ -54,15 +83,32 @@
           retVal[styleAttr] = true
         } else if (isArray(styleAttr)) {
           each(styleAttr, (c) => {
-            retVal[c] = true
+            if (isObject(c)) {
+              extend(retVal, c)
+            } else {
+              retVal[c] = true
+            }
           })
         } else if (isObject(styleAttr)) {
           retVal = {...retVal, ...styleAttr}
         }
         return retVal
+      },
+      buttonClick (index) {
+        console.log('click', index)
+        this.$storeCtx.dispatch({
+          type: 'btnClick',
+          index: index
+        })
+      },
+      getButtonClasses (classes) {
+        return this.processStyle(classes)
       }
     },
     computed: {
+      isButtonsAvailable () {
+        return this.$storeCtx.state.buttons && this.$storeCtx.state.buttons.length > 0
+      },
       isVisible () {
         return this.$storeCtx.state.visible
       },
@@ -76,7 +122,23 @@
         let state = this.$storeCtx.state
         return this.processStyle(state.rowClasses)
       },
-      styleClasses () {
+      helpClasses () {
+        let state = this.$storeCtx.state
+        return this.processStyle(state.helpClasses)
+      },
+      tooltipClasses () {
+        let state = this.$storeCtx.state
+        return this.processStyle(state.tooltipClasses)
+      },
+      inputGroupClasses () {
+        let state = this.$storeCtx.state
+        return this.processStyle(state.inputGroupClasses)
+      },
+      buttonGroupClasses () {
+        let state = this.$storeCtx.state
+        return this.processStyle(state.buttonGroupClasses)
+      },
+      fieldClasses () {
         let state = this.$storeCtx.state
         const hasErrors = this.fieldHasErrors
         let baseClasses = {
@@ -99,7 +161,7 @@
         // }
 
         baseClasses['form-group'] = true
-        extend(baseClasses, this.processStyle(state.styleClasses))
+        extend(baseClasses, this.processStyle(state.fieldClasses))
 
         baseClasses['field-' + state.type] = true
         return baseClasses

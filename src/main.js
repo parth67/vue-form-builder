@@ -4,6 +4,13 @@ import Vue from 'vue'
 import App from './App'
 import model from './store/model'
 import _ from 'lodash'
+import 'jquery'
+import 'bootstrap/dist/js/bootstrap'
+
+// es6-promise polyfill if required
+import 'es6-promise/auto'
+import 'bootstrap/dist/css/bootstrap.css'
+
 // import schema from './store/schema-store'
 import Vuex, { createNamespacedHelpers } from 'vuex'
 

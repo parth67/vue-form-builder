@@ -1,4 +1,4 @@
-import { keys, each, isObject, has, isFunction, flattenDepth, filter, isNil, negate } from 'lodash'
+import { keys, each, isObject, has, isFunction, flattenDepth, filter, isNil, negate, isNumber } from 'lodash'
 import Vue from 'vue'
 // import { defineValueProperty } from './helper'
 
@@ -84,33 +84,18 @@ const actions = {
     // define private space to save value
     // fieldDef._private = {}
     // defineValueProperty(fieldDef._private, this, modelNamespace, fieldDef.model, fieldDef.formatValueToField, fieldDef.formatValueToModel)
+    // let registerWatcher = fieldDef.registerWatcher
+    // delete fieldDef.registerWatcher
 
-    if (isFunction(fieldDef.registerWatcher)) {
-      // on change of this field we need to notify others about change.
-      // we will setup Vue instance for this purpose with watcher attached
-      // to value of this field
-      // eslint-disable-next-line func-names, no-new
-      // new Vue({
-      //   computed: {
-      //     watchVal () {
-      //       console.log('recompute watchval')
-      //       return context.state._private.value
-      //     }
-      //   },
-      //   watch: {
-      //     'watchVal': {
-      //       handler: function (val, oldVal) {
-      //         context.dispatch({
-      //           type: 'notify',
-      //           newVal: val,
-      //           oldVal: oldVal
-      //         })
-      //       },
-      //       immediate: true
-      //     }
-      //   }
-      // })
-      fieldDef.registerWatcher((newVal, oldVal) => {
+    context.commit({
+      type: 'merge',
+      value: fieldDef
+    })
+  },
+  setUpWatcher (context, payload) {
+    let registerWatcher = context.state.registerWatcher
+    if (isFunction(registerWatcher)) {
+      registerWatcher((newVal, oldVal) => {
         context.dispatch({
           type: 'notify',
           newVal: newVal,
@@ -120,8 +105,9 @@ const actions = {
     }
 
     context.commit({
-      type: 'merge',
-      value: fieldDef
+      type: 'setAttr',
+      key: 'registerWatcher',
+      value: null
     })
   },
   hide ({commit, dispatch, state}, payload) {
@@ -182,6 +168,13 @@ const actions = {
       context.state.notifier(context, context.state.id, payload.newVal, payload.oldVal)
     }
   },
+  triggerOnchange (context, payload) {
+    // call onchange
+    let {newVal, oldVal} = payload
+    if (isFunction(context.state.onChange)) {
+      context.state.onChange(newVal, oldVal)
+    }
+  },
   setValue (context, payload) {
     const {value} = payload
     // get current value
@@ -189,6 +182,13 @@ const actions = {
 
     if (oldVal === value) {
       // change in value.
+      if (payload.forceChange === true) {
+        context.dispatch({
+          type: 'triggerOnchange',
+          newVal: value,
+          oldVal
+        })
+      }
       return
     }
 
@@ -202,15 +202,24 @@ const actions = {
     const newVal = context.getters.value
 
     // call onchange
-    if (isFunction(context.state.onChange)) {
-      context.state.onChange(oldVal, newVal)
-    }
+    context.dispatch({
+      type: 'triggerOnchange',
+      newVal,
+      oldVal
+    })
 
     // TODO should we move to watcher. we will need watcher for all
     // call validate
     return context.dispatch({
       type: 'validate'
     })
+  },
+  btnClick (context, payload) {
+    let index = payload.index
+    if (isNumber(index)) {
+      context.state.buttons[index].onClick()
+    }
+
   }
 }
 

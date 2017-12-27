@@ -1,6 +1,6 @@
 <template>
   <select v-model="value" :disabled="disabled" :name="$storeCtx.state.inputName" :id="$storeCtx.state.id"
-          :class="$storeCtx.state.fieldClasses" class="form-control">
+          :class="inputClasses" class="form-control">
     <option v-if="!fieldOptions.hideNoneSelectedText" :disabled="$storeCtx.state.required"
             :value="fieldOptions.noneValue || null"
             :selected="value == undefined">{{ fieldOptions.noneSelectedText || '' }}

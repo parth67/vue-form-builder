@@ -1,4 +1,15 @@
-import { each, isArray, isFunction, isObject, isString, uniqueId, get as objGet, cloneDeep } from 'lodash'
+import {
+  each,
+  isArray,
+  isFunction,
+  isObject,
+  isString,
+  uniqueId,
+  get as objGet,
+  cloneDeep,
+  debounce,
+  isNumber
+} from 'lodash'
 import {
   getCallChainFunction,
   getCallChainFunctionForkJoin,
@@ -153,20 +164,25 @@ const actions = {
           }
           // push watcher in map
 
-          dependencyMap[depId].push(getWrappedFunction(store, field.watcher.bind({}), modelNamespace, schemaNamespace, field.id))
+          dependencyMap[depId].push(getWrappedFunction(store, field.watcher.bind({}), 0, modelNamespace, schemaNamespace, field.id))
         })
       }
 
+      // process buttons
+      each(field.buttons, (b) => {
+        b.onClick = getWrappedFunction(store, b.onClick.bind({}), 0, modelNamespace, schemaNamespace, field.id)
+      })
+
       // onChange and onValidate needs to be bound to this.
       if (isFunction(field.onChange)) {
-        field.onChange = getWrappedFunction(store, field.onChange.bind({}), modelNamespace, schemaNamespace, field.id)
+        field.onChange = getWrappedFunction(store, field.onChange.bind({}), 100, modelNamespace, schemaNamespace, field.id)
       }
       if (isFunction(field.onValidate)) {
-        field.onValidate = getWrappedFunction(store, field.onValidate.bind({}), modelNamespace, schemaNamespace, field.id)
+        field.onValidate = getWrappedFunction(store, field.onValidate.bind({}), 200, modelNamespace, schemaNamespace, field.id)
       }
 
       if (isFunction(field.items)) {
-        field.items = getWrappedFunction(store, field.items.bind({}), modelNamespace, schemaNamespace, field.id)
+        field.items = getWrappedFunction(store, field.items.bind({}), 0, modelNamespace, schemaNamespace, field.id)
       }
 
       if (isFunction(field.validator)) {
@@ -176,7 +192,7 @@ const actions = {
       if (isArray(field.validator)) {
         let validatorArr = []
         each(field.validator, (validator) => {
-          validatorArr.push(getWrappedFunction(store, validator.bind({}), modelNamespace, schemaNamespace, field.id))
+          validatorArr.push(getWrappedFunction(store, validator.bind({}), 200, modelNamespace, schemaNamespace, field.id))
         })
         field.validator = getCallChainFunctionForkJoin(...validatorArr)
       }
@@ -211,13 +227,14 @@ const actions = {
       })
       groups.push(lgroup)
     })
+
     // now inject real notify chain using dependencyMap
     each(fields, (field) => {
       let fid = field.id
       let callChain = dependencyMap[fid]
       if (isArray(callChain)) {
         field.notifier = getCallChainFunction(...callChain)
-        let unwatch = registerWatcher(store, field, modelNamespace)
+        let unwatch = registerNotifyWatcher(store, field, modelNamespace)
         context.commit({
           type: 'addWatcher',
           watcher: unwatch
@@ -245,10 +262,12 @@ const actions = {
         let callChain = dependencyMap[fid]
         if (isArray(callChain)) {
           fVal.notifier = getCallChainFunction(...callChain)
-          let unwatch = registerWatcher(store, fVal, modelNamespace)
-          context.commit({
-            type: 'addWatcher',
-            watcher: unwatch
+          let unwatch = registerNotifyWatcher(store, fVal, modelNamespace)
+          unwatch.then((val) => {
+            context.commit({
+              type: 'addWatcher',
+              watcher: val
+            })
           })
         }
 
@@ -264,6 +283,25 @@ const actions = {
           type: 'addGroupField',
           groupId: gId,
           fieldId: fNamespace
+        })
+      })
+    })
+
+    context.dispatch({
+      type: 'setUpWatcher'
+    })
+  },
+  setUpWatcher (context) {
+    each(context.state.fields, (fStore) => {
+      context.dispatch({
+        type: fStore[fStore.length - 1] + '/setUpWatcher'
+      })
+    })
+
+    each(context.state.groups, (gVal) => {
+      each(gVal, (gfStore) => {
+        context.dispatch({
+          type: gfStore[gfStore.length - 1] + '/setUpWatcher'
         })
       })
     })
@@ -293,28 +331,27 @@ const actions = {
   }
 }
 
-function registerWatcher (store, field, modelNamespace) {
-  let registerFunc = null
-
-  field.registerWatcher = (passFunc) => {
-    registerFunc = passFunc
-  }
-
-  return store.watch(function (state, getters) {
-    let mContext = getModuleByNamespace(store, modelNamespace)
-    let value = objGet(mContext.state, field.model, null)
-    return value
-  }, function (val, oldVal) {
-    if (isFunction(registerFunc)) {
-      registerFunc(val, oldVal)
+function registerNotifyWatcher (store, field, modelNamespace) {
+  return new Promise(function (resolve) {
+    field.registerWatcher = (passFunc) => {
+      let unwatch = store.watch(function (state, getters) {
+        let mContext = getModuleByNamespace(store, modelNamespace)
+        let value = objGet(mContext.state, field.model, null)
+        return value
+      }, function (val, oldVal) {
+        if (isFunction(passFunc)) {
+          passFunc(val, oldVal)
+        }
+      }, {
+        immediate: true
+      })
+      resolve(unwatch)
     }
-  }, {
-    immediate: true
   })
 }
 
-function getWrappedFunction (store, funct, modelNamespace, schemaNamespace, fid) {
-  return (...args) => {
+function getWrappedFunction (store, funct, debounceSec, modelNamespace, schemaNamespace, fid) {
+  let retVal = (...args) => {
     let modelCtx = getModuleByNamespace(store, modelNamespace)
     let schemaCtx = getModuleByNamespace(store, schemaNamespace)
 
@@ -323,8 +360,16 @@ function getWrappedFunction (store, funct, modelNamespace, schemaNamespace, fid)
     }
 
     let fieldCtx = getModuleByNamespace(store, schemaNamespace + fid)
-    return funct(modelCtx, schemaCtx, fieldCtx, ...args)
+    return funct(schemaCtx, fieldCtx, ...args, modelCtx)
   }
+
+  if (isNumber(debounceSec) && debounceSec !== 0) {
+    retVal = debounce(retVal, debounceSec, {
+      leading: true,
+      trailing: true
+    })
+  }
+  return retVal
 }
 
 export default {

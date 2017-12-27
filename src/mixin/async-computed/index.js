@@ -1,6 +1,6 @@
 import Vue from 'vue'
 
-const prefix = '_async_computed$'
+const prefix = '_async_computed_vue_form_builder$'
 
 Vue.config
   .optionMergeStrategies

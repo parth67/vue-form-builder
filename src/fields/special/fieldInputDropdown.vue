@@ -1,6 +1,6 @@
 <template>
-  <div class="input-select-wrapper">
-    <input ref="input" class="form-control" autocomplete="off" role="textbox" aria-label="Search" type="text">
+  <div class="input-select-wrapper" :class="inputClasses">
+    <fieldInput ref="input" :storeNamespace="storeNamespace"></fieldInput>
     <ul class="dropdown-menu" v-show="$storeCtx.state.dropdown">
       <li v-for="(item, index) in items" :key="index">
         <a href="javascript:void(0);" @click="handleSelect(getValue(item), $event)">{{getLabel(item)}}</a>
@@ -12,6 +12,7 @@
 <script>
   import AbstractField from '../../mixin/abstract-field'
   import AsyncComputed from '../../mixin/async-computed'
+  import fieldInput from '../core/fieldInput'
   import { isObject, isFunction } from 'lodash'
 
   export default {
@@ -23,6 +24,9 @@
         key: 'dropdown',
         value: false
       })
+    },
+    components: {
+      fieldInput
     },
     asyncComputed: {
       items () {
@@ -80,7 +84,4 @@
     overflow-y: auto;
   }
 
-  .input-select-wrapper {
-    position: relative;
-  }
 </style>

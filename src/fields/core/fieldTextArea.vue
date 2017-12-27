@@ -1,7 +1,7 @@
 <template>
   <textarea v-model="value"
             :id="$storeCtx.state.id"
-            :class="$storeCtx.state.fieldClasses"
+            :class="inputClasses"
             :disabled="disabled"
             :maxlength="$storeCtx.state.max"
             :minlength="$storeCtx.state.min"

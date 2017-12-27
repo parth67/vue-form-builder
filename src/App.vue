@@ -1,20 +1,19 @@
 <template>
-  <div id="app">
+  <div id="app" class="container-fluid">
     <pre>{{ $store.state.model | pretty }}</pre>
 
     <VueFormBuilder :modelNamespace="'model'" :schemaNamespace="'formSchema'" :schema="schema">
-      <template slot-scope="props">
-        <field-wrapper :storeNamespace="props.getFieldSchema('id1')"></field-wrapper>
-      </template>
+
     </VueFormBuilder>
   </div>
 </template>
 
 <script>
   // import VueFormBuilder from './VueFormBuilder'
-  import VueFormBuilder from './VueFormBuilderSlotted'
+  import VueFormBuilder from './VueFormBuilder'
   import fieldWrapper from './fields/fieldWrapper'
   import validator from './validator'
+
   export default {
     name: 'app',
     components: {
@@ -53,12 +52,6 @@
             id: 'grp1',
             label: 'LBL1',
             fields: [{
-              id: 'id1',
-              type: 'input',
-              model: 'b',
-              dependsOn: ['grp1/id2'],
-              watcher: function watchid1 () { console.log('notified grp1-id1', arguments) }
-            }, {
               id: 'id2',
               model: 'c',
               items: function (modelCtx, schemaCtx, fieldCtx) {
@@ -72,11 +65,23 @@
                 retVal = [{value: 1, label: 'item1', group: 'Grp1'}, 2, 3]
                 return retVal
               },
-              type: 'check-list',
-              inputType: 'password',
+              rowClasses: 'col-md-12 edit-row',
+              inputGroupClasses: ['input-group'],
+              type: 'input-dropdown',
+              inputType: 'text',
               dependsOn: ['id1'],
-              unknown: 'id',
-              watcher: function watchid1 () { console.log('notified grp1-id2', arguments) }
+              watcher () { console.log(arguments, 'watcher') },
+              buttons: [{
+                onClick: function () { console.log(arguments) },
+                classes: 'btn-default',
+                html: '<span class="glyphicon glyphicon-search" aria-hidden="true"></span>'
+              }]
+            }, {
+              id: 'id1',
+              type: 'input',
+              model: 'b'
+              // dependsOn: ['grp1/id2'],
+              // watcher: function watchid1 () { console.log('notified grp1-id1', arguments) }
             }]
           }]
 

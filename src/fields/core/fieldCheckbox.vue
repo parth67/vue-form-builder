@@ -4,16 +4,15 @@
          :autocomplete="$storeCtx.state.autocomplete"
          :disabled="disabled"
          :name="$storeCtx.state.inputName"
-         :class="$storeCtx.state.fieldClasses"/>
+         :class="inputClasses"/>
 </template>
 
 <script>
   import AbstractFieldMixin from '../../mixin/abstract-field'
-  import AsyncComputed from '../../mixin/async-computed'
 
   export default {
     name: 'field-checkbox',
-    mixins: [AbstractFieldMixin, AsyncComputed]
+    mixins: [AbstractFieldMixin]
   }
 </script>
 

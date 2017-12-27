@@ -1,6 +1,6 @@
 <template>
   <div>
-    <slot :getFieldSchema="getFieldSchema" :getGroupFieldSchema="getGroupFieldSchema">
+    <slot :getFieldSchema="fieldIdsVsNamespace" :getGroupFieldSchema="groupFieldIdsVsNamespace">
 
     </slot>
   </div>
@@ -83,13 +83,13 @@
           schemaNamespace,
           modelNamespace
         })
-      },
-      getFieldSchema: function (id) {
-        return this.fieldIdsVsNamespace[id]
-      },
-      getGroupFieldSchema: function (gid, id) {
-        return this.groupFieldIdsVsNamespace[gid + '/' + id]
       }
+      // getFieldSchema: function (id) {
+      //   return this.fieldIdsVsNamespace[id]
+      // },
+      // getGroupFieldSchema: function (gid, id) {
+      //   return this.groupFieldIdsVsNamespace[gid + '/' + id]
+      // }
     }
   }
 </script>

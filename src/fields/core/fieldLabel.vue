@@ -1,5 +1,5 @@
 <template>
-  <span :id="$storeCtx.state.id" :class="$storeCtx.state.fieldClasses">{{ value }}</span>
+  <span :id="$storeCtx.state.id" :class="inputClasses">{{ value }}</span>
 </template>
 
 <script>

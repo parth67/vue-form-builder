@@ -10,10 +10,10 @@
 
     <template v-for="(group, id) in groups" v-if="isGroupVisible(id)">
       <!-- bind slot to group name -->
-      <slot :name="groupId"
-            :groupId="groupId"
-            :groupFields="groupFields"
-            :groupLabel="groupsLabel[groupId]">
+      <slot :name="id"
+            :groupId="id"
+            :groupFields="group.Fields"
+            :groupLabel="groupsLabel[id]">
         <!-- default content if slot is not provided -->
         <fieldset :is="groupTag">
           <slot v-if="groupsLabel[id]" v-bind:legend="groupsLabel[id]">
