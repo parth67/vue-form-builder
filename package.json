@@ -1,6 +1,6 @@
 {
   "name": "vue-form-builder",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Vue Form Builder",
   "author": "Parth",
   "private": true,
@@ -18,7 +18,8 @@
     "e2e": "node test/e2e/runner.js",
     "test": "npm run unit && npm run e2e",
     "lint": "eslint --ext .js,.vue src test/unit/specs test/e2e/specs",
-    "build": "node build/build.js && rm -rf tar && mkdir tar && yarn pack --filename tar/vue-form-builder.tgz"
+    "build": "node build/build.js && rm -rf tar && mkdir tar && yarn pack --filename tar/vue-form-builder.tgz",
+    "babel": "babel src --out-dir dist/compiled --source-maps"
   },
   "dependencies": {
     "lodash": "^4.17.4",
