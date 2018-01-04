@@ -35,22 +35,19 @@ import { createNamespacedHelpers } from 'vuex'
 
 function defaultGetter (store, namespace, model, formatValueToField) {
   return function getter () {
-    let mapState = createNamespacedHelpers(namespace).mapState({
-      value: (state) => {
-        let value = objGet(state, model, null)
-        return isFunction(formatValueToField) ? formatValueToField(value) : value
-      }
-    })
-    return mapState.value.call({$store: store})
+    let context = getModuleByNamespace(store, namespace)
+    let state = context.state
+    let value = objGet(state, model, null)
+    return isFunction(formatValueToField) ? formatValueToField(value) : value
   }
 }
 
 function defaultSetter (store, namespace, model, formatValueToModel) {
   return function commiter (value) {
-    let mapActions = createNamespacedHelpers(namespace).mapActions({
-      set: 'set'
-    })
-    mapActions.set.call({$store: store}, {
+    let context = getModuleByNamespace(store, namespace)
+    let dispatch = context.dispatch
+    dispatch({
+      type: 'set',
       key: model,
       value: isFunction(formatValueToModel) ? formatValueToModel(value) : value
     })

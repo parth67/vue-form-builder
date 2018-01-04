@@ -137,8 +137,10 @@ const actions = {
       value: null
     })
   },
-  hide ({commit, dispatch, state}, payload) {
+  hide ({commit, dispatch, state, getters}, payload) {
     if (state.visible === true) {
+      let currVal = getters.value
+
       commit({
         type: 'preserveValue'
       })
@@ -146,14 +148,21 @@ const actions = {
         type: 'hide'
       })
 
-      // // TODO this may not be required in view of wathcer.
-      // return dispatch({
-      //   type: 'validate'
-      // })
+      let newVal = getters.value
+
+      // value is same after preserve
+      // trigger validate.
+      if (newVal === currVal) {
+        dispatch({
+          type: 'validate'
+        })
+      }
     }
   },
-  show ({commit, dispatch, state}, payload) {
+  show ({commit, dispatch, state, getters}, payload) {
     if (state.visible === false) {
+      let currVal = getters.value
+
       commit({
         type: 'restoreValue'
       })
@@ -161,43 +170,50 @@ const actions = {
         type: 'show'
       })
 
-      // // TODO this may not be required in view of wathcer.
-      // return dispatch({
-      //   type: 'validate'
-      // })
+      let newVal = getters.value
+
+      // value is same after restore
+      // trigger validate.
+      if (newVal === currVal) {
+        dispatch({
+          type: 'validate'
+        })
+      }
     }
   },
   validate (context) {
     let validator = context.state.validator
+    return new Promise((resolve) => {
+      context.commit({
+        type: 'clearErrors'
+      })
 
-    context.commit({
-      type: 'setErrors',
-      value: []
+      if (context.getters.privateData.validationRequired && isFunction(validator)) {
+        // its a validator chain. call each function with value
+        // call each validator in chain
+        let currVal = context.getters.value
+        let validatorResultPromise = validator(currVal)
+
+        validatorResultPromise.then(function (result) {
+          let flattenErrors = filter(flattenDepth(result, 3), negate(isNil))
+          context.commit({
+            type: 'setErrors',
+            value: flattenErrors
+          })
+
+          // call onchange
+          if (isFunction(context.state.onValidate)) {
+            context.state.onValidate(flattenErrors)
+          }
+
+          resolve(flattenErrors)
+        })
+      } else {
+        resolve()
+      }
+
     })
 
-    if (context.getters.privateData.validationRequired && isFunction(validator)) {
-      // its a validator chain. call each function with value
-      // call each validator in chain
-      let currVal = context.getters.value
-      let validatorResultPromise = validator(currVal)
-
-      validatorResultPromise.then(function (result) {
-        let flattenErrors = filter(flattenDepth(result, 3), negate(isNil))
-        context.commit({
-          type: 'setErrors',
-          value: flattenErrors
-        })
-
-        // call onchange
-        if (isFunction(context.state.onValidate)) {
-          context.state.onValidate(flattenErrors)
-        }
-      })
-    }
-
-    // return context.dispatch({
-    //   type: 'notify'
-    // })
   },
   notify (context, payload) {
     // call dependency change notifier

@@ -1,5 +1,5 @@
-<template>
-  <div v-if="storeNamespace" :class="rowClasses">
+<template v-if="storeNamespace">
+  <div v-if="isRowVisible" :class="rowClasses">
     <div v-if="isVisible" :class="fieldClasses">
       <label v-if="isLabelApplicable == true" :for="$storeCtx.state.id">
         {{ $storeCtx.state.label }}
@@ -12,10 +12,12 @@
       </template>
 
       <template v-if="$storeCtx.state.help">
-        <span class="help" :class="helpClasses">
-          <i class="icon"></i>
-          <div class="helpText" v-html="$storeCtx.state.help"></div>
-        </span>
+        <slot name="help" :class="helpClasses" :help="$storeCtx.state.help">
+          <span class="help" :class="helpClasses">
+            <i class="icon"></i>
+            <div class="helpText" v-html="$storeCtx.state.help"></div>
+          </span>
+        </slot>
       </template>
 
       <div class="field-wrap" :class="inputGroupClasses">
@@ -30,7 +32,11 @@
         </span>
 
       </div>
-      <div class="hint" v-if="$storeCtx.state.hint">{{ fieldHint }}</div>
+
+      <slot name="hint" :hint="fieldHint" v-if="$storeCtx.state.hint">
+        <div class="hint">{{ fieldHint }}</div>
+      </slot>
+
       <div class="errors help-block" v-if="fieldHasErrors == true">
         <span v-for="(error, index) in errors" :key="index">{{ error }}</span>
       </div>
@@ -109,6 +115,13 @@
       isButtonsAvailable () {
         return this.$storeCtx.state.buttons && this.$storeCtx.state.buttons.length > 0
       },
+      isRowVisible () {
+        if (this.$storeCtx.state.hideRow === true) {
+          return this.isVisible
+        } else {
+          return true
+        }
+      },
       isVisible () {
         return this.$storeCtx.state.visible
       },
@@ -145,8 +158,8 @@
           field: true,
           error: hasErrors,
           disabled: state.disabled,
-          readonly: state.readonly,
-          required: state.required
+          readonly: state.readonly
+          // required: state.required
         }
 
         // let {validationErrorClass, validationSuccessClass} = this.options

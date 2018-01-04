@@ -93,7 +93,7 @@
               }]
             }, {
               id: 'id1',
-              type: 'input',
+              type: 'empty',
               model: 'b'
               // dependsOn: ['grp1/id2'],
               // watcher: function watchid1 () { console.log('notified grp1-id1', arguments) }

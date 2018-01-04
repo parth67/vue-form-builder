@@ -6,9 +6,7 @@ import {
   isString,
   uniqueId,
   get as objGet,
-  cloneDeep,
-  debounce,
-  isNumber
+  cloneDeep
 } from 'lodash'
 import {
   getCallChainFunction,
@@ -76,8 +74,8 @@ const mutations = {
   clearWatcher (state) {
     for (let i = 0; i < state.watchers.length; i++) {
       let unwatch = state.watchers[i]
-      if (isFunction(unwatch)) {
-        unwatch()
+      if (unwatch && unwatch.then) {
+        unwatch.then((v) => v())
       }
     }
     state.watchers.splice(0)
@@ -151,6 +149,7 @@ const actions = {
 
     function processField (passField) {
       let field = cloneDeep(passField)
+      let funcBindCtx = {}
       if (isString(field.styleClasses)) {
         field.styleClasses = [field.styleClasses]
       }
@@ -174,25 +173,25 @@ const actions = {
           }
           // push watcher in map
 
-          dependencyMap[depId].push(getWrappedFunction(store, field.watcher.bind({}), 0, modelNamespace, schemaNamespace, field.id))
+          dependencyMap[depId].push(getWrappedFunction(store, field.watcher.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id))
         })
       }
 
       // process buttons
       each(field.buttons, (b) => {
-        b.onClick = getWrappedFunction(store, b.onClick.bind({}), 0, modelNamespace, schemaNamespace, field.id)
+        b.onClick = getWrappedFunction(store, b.onClick.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id)
       })
 
       // onChange and onValidate needs to be bound to this.
       if (isFunction(field.onChange)) {
-        field.onChange = getWrappedFunction(store, field.onChange.bind({}), 100, modelNamespace, schemaNamespace, field.id)
+        field.onChange = getWrappedFunction(store, field.onChange.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id)
       }
       if (isFunction(field.onValidate)) {
-        field.onValidate = getWrappedFunction(store, field.onValidate.bind({}), 200, modelNamespace, schemaNamespace, field.id)
+        field.onValidate = getWrappedFunction(store, field.onValidate.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id)
       }
 
       if (isFunction(field.items)) {
-        field.items = getWrappedFunction(store, field.items.bind({}), 0, modelNamespace, schemaNamespace, field.id)
+        field.items = getWrappedFunction(store, field.items.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id)
       }
 
       if (isFunction(field.validator)) {
@@ -202,7 +201,7 @@ const actions = {
       if (isArray(field.validator)) {
         let validatorArr = []
         each(field.validator, (validator) => {
-          validatorArr.push(getWrappedFunction(store, validator.bind({}), 200, modelNamespace, schemaNamespace, field.id))
+          validatorArr.push(getWrappedFunction(store, validator.bind(funcBindCtx), modelNamespace, schemaNamespace, field.id))
         })
         field.validator = getCallChainFunctionForkJoin(...validatorArr)
       }
@@ -321,6 +320,11 @@ const actions = {
     })
   },
   dispose (context) {
+
+    context.commit({
+      type: 'clearWatcher'
+    })
+
     each(context.state.fields, (fStore) => {
       this.unregisterModule(fStore)
     })
@@ -329,10 +333,6 @@ const actions = {
       each(gVal, (gfStore) => {
         this.unregisterModule(gfStore)
       })
-    })
-
-    context.commit({
-      type: 'clearWatcher'
     })
 
     context.commit({
@@ -364,7 +364,7 @@ function registerNotifyWatcher (store, field, modelNamespace) {
   })
 }
 
-function getWrappedFunction (store, funct, debounceSec, modelNamespace, schemaNamespace, fid) {
+function getWrappedFunction (store, funct, modelNamespace, schemaNamespace, fid) {
   let retVal = (...args) => {
     let modelCtx = getModuleByNamespace(store, modelNamespace)
     let schemaCtx = getModuleByNamespace(store, schemaNamespace)
@@ -377,12 +377,6 @@ function getWrappedFunction (store, funct, debounceSec, modelNamespace, schemaNa
     return funct(modelCtx, schemaCtx, fieldCtx, ...args)
   }
 
-  if (isNumber(debounceSec) && debounceSec !== 0) {
-    retVal = debounce(retVal, debounceSec, {
-      leading: true,
-      trailing: true
-    })
-  }
   return retVal
 }
 

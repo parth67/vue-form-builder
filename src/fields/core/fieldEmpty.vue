@@ -1,10 +1,12 @@
 <template>
-    $END$
+
 </template>
 
 <script>
+  import AbstractFieldMixin from '../../mixin/abstract-field'
   export default {
-    name: 'field-empty'
+    name: 'field-empty',
+    mixins: [AbstractFieldMixin]
   }
 </script>
 
